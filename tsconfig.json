@@ -1,0 +1,13 @@
+{
+  "files": [],
+  "references": [
+    { "path": "./packages/core" },
+    { "path": "./packages/config" },
+    { "path": "./packages/decision-engine" },
+    { "path": "./packages/memory" },
+    { "path": "./packages/llm" },
+    { "path": "./packages/sender" },
+    { "path": "./apps/bot-server" }
+  ]
+}
+
