@@ -6,7 +6,18 @@ export default defineConfig({
     alias: {
       '@bot-momo/config': resolve(__dirname, 'packages/config/src/index.ts'),
       '@bot-momo/core': resolve(__dirname, 'packages/core/src/index.ts'),
+      '@bot-momo/memory': resolve(__dirname, 'packages/memory/src/index.ts'),
+      'drizzle-orm/pg-core': resolve(__dirname, 'node_modules/drizzle-orm/pg-core/index.js'),
+      'drizzle-orm/node-postgres': resolve(
+        __dirname,
+        'node_modules/drizzle-orm/node-postgres/index.js',
+      ),
+      'drizzle-orm/node-postgres/migrator': resolve(
+        __dirname,
+        'node_modules/drizzle-orm/node-postgres/migrator.js',
+      ),
       fastify: resolve(__dirname, 'node_modules/fastify/fastify.js'),
+      pg: resolve(__dirname, 'node_modules/pg/esm/index.mjs'),
     },
   },
   test: {

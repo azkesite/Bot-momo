@@ -652,3 +652,84 @@ Redis：
 ### 20.6 下一步建议
 
 下一步进入 implementation plan 第 5 步：建立数据库模型与迁移机制。
+
+## 21. 数据库模型与迁移实现现状
+
+### 21.1 已实现能力
+
+当前已完成 implementation plan 第 5 步：建立数据库模型与迁移机制。
+
+已实现内容：
+
+- 基于 Drizzle ORM 的 PostgreSQL schema
+- 根级 `drizzle.config.ts`
+- 数据库迁移生成脚本
+- 数据库迁移执行脚本
+- 数据结构验证脚本
+- 本地 PostgreSQL / Redis 的 Docker Compose 定义
+
+### 21.2 当前已落地的核心表
+
+当前数据库模型已覆盖以下 MVP 表：
+
+- `groups`
+- `users`
+- `messages`
+- `keyword_rules`
+- `user_memories`
+- `memory_facts`
+- `conversation_summaries`
+- `reply_logs`
+
+### 21.3 当前结构约束
+
+当前已明确：
+
+- `groups` 使用 `(platform, external_group_id)` 唯一索引
+- `users` 使用 `(platform, external_user_id)` 唯一索引
+- `messages` 建立群、用户、回复链索引
+- `keyword_rules` 建立启用状态与优先级索引
+- `memory_facts` 建立用户与 scope 索引
+- `reply_logs` 建立消息和 trace 索引
+
+并已使用 enum 固定以下字段：
+
+- 关键词匹配方式
+- 记忆层级
+- 摘要作用域
+- 回复状态
+
+### 21.4 当前迁移流程
+
+当前已具备以下脚本：
+
+- `corepack pnpm db:generate`
+- `corepack pnpm db:migrate`
+- `corepack pnpm db:verify`
+
+### 21.5 当前验证结果
+
+本轮已完成以下验证：
+
+- 在空数据库上成功生成首个迁移文件
+- 在真实 PostgreSQL 容器上成功执行迁移
+- 再次执行迁移成功，验证可重复执行
+- 插入最小测试数据成功
+- 查询最小测试数据成功
+
+并已通过：
+
+- `corepack pnpm typecheck`
+- `corepack pnpm test`
+- `corepack pnpm lint`
+
+### 21.6 当前已知限制
+
+- 当前数据库验证依赖本地 Docker Desktop
+- 当前依赖状态尚未接入真实数据库连通性探针
+- 还没有 repository / query service 层
+- 还没有消息入库和回复日志写入逻辑，只完成了结构准备
+
+### 21.7 下一步建议
+
+下一步进入 implementation plan 第 6 步：建立 Redis 连接与基础状态能力。

@@ -108,3 +108,34 @@
 ### 下一步
 
 - 进入 implementation plan 第 5 步：建立数据库模型与迁移机制
+
+## 2026-04-16
+
+### 已完成
+
+- 完成 implementation plan 第 5 步：建立数据库模型与迁移机制
+- 接入 Drizzle ORM、drizzle-kit、pg、tsx
+- 建立 PostgreSQL schema、迁移脚本和验证脚本
+- 生成首个迁移文件到 `packages/memory/drizzle/`
+- 新增本地 `infra/docker/docker-compose.yml`
+- 新增数据库 schema 测试 `tests/database-schema.test.ts`
+
+### 验证结果
+
+- `corepack pnpm db:generate` 通过
+- `corepack pnpm db:migrate` 首次执行通过
+- `corepack pnpm db:migrate` 二次执行通过
+- `corepack pnpm db:verify` 通过
+- `corepack pnpm typecheck` 通过
+- `corepack pnpm test` 通过
+- `corepack pnpm lint` 通过
+
+### 备注
+
+- 本轮使用真实 PostgreSQL 容器完成迁移验证，不是纯内存替身
+- Docker Desktop 在执行前需要先启动
+- 当前数据库层只完成结构与迁移，还未进入 repository 和业务写入逻辑
+
+### 下一步
+
+- 进入 implementation plan 第 6 步：建立 Redis 连接与基础状态能力

@@ -12,7 +12,10 @@
     "typecheck": "tsc -b",
     "test": "vitest run",
     "lint": "eslint apps packages tests vitest.config.ts",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "db:generate": "node ./node_modules/drizzle-kit/bin.cjs generate --config drizzle.config.ts",
+    "db:migrate": "node --import tsx packages/memory/src/db/migrate.ts",
+    "db:verify": "node --import tsx packages/memory/src/db/verify.ts"
   },
   "pnpm": {
     "onlyBuiltDependencies": [
@@ -22,10 +25,15 @@
   "devDependencies": {
     "@eslint/js": "^9.25.1",
     "@types/node": "^22.15.3",
+    "@types/pg": "^8.15.5",
+    "drizzle-kit": "^0.31.4",
+    "drizzle-orm": "^0.44.7",
     "eslint": "^9.25.1",
     "fastify": "^5.6.1",
     "pino": "^9.7.0",
     "prettier": "^3.5.3",
+    "pg": "^8.16.3",
+    "tsx": "^4.20.6",
     "typescript": "^5.8.3",
     "typescript-eslint": "^8.30.1",
     "vitest": "^3.1.3",

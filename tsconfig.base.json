@@ -6,7 +6,11 @@
     "baseUrl": ".",
     "paths": {
       "@bot-momo/config": ["packages/config/src/index.ts"],
-      "@bot-momo/core": ["packages/core/src/index.ts"]
+      "@bot-momo/core": ["packages/core/src/index.ts"],
+      "@bot-momo/memory": ["packages/memory/src/index.ts"],
+      "drizzle-orm": ["node_modules/drizzle-orm/index.d.ts"],
+      "drizzle-orm/*": ["node_modules/drizzle-orm/*"],
+      "pg": ["node_modules/pg"]
     },
     "strict": true,
     "noUncheckedIndexedAccess": true,
