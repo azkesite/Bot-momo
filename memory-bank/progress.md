@@ -81,3 +81,30 @@
 ### 下一步
 
 - 进入 implementation plan 第 4 步：实现健康检查与服务启动入口
+
+## 2026-04-16
+
+### 已完成
+
+- 完成 implementation plan 第 4 步：实现健康检查与服务启动入口
+- 引入 Fastify 作为最小服务框架
+- 实现 `/health/live` 与 `/health`
+- 在健康检查中暴露 NapCat / PostgreSQL / Redis 的配置状态
+- 将启动入口改为实际监听端口
+- 增加健康检查测试 `tests/healthcheck.test.ts`
+
+### 验证结果
+
+- `corepack pnpm typecheck` 通过
+- `corepack pnpm test` 通过
+- `corepack pnpm lint` 通过
+
+### 备注
+
+- 当前健康检查里的依赖状态仍是配置层面，不是实际连接层面的探针
+- 这一步已经满足“服务启动”和“依赖状态可观测”的最小要求
+- 下一步进入数据库模型与迁移阶段
+
+### 下一步
+
+- 进入 implementation plan 第 5 步：建立数据库模型与迁移机制
