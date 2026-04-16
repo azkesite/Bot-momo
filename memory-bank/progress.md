@@ -340,3 +340,26 @@
 ### 下一步
 
 - 进入 implementation plan 第 14 步：实现关键词命中判断
+
+## 2026-04-16
+
+### 已完成
+
+- 完成 implementation plan 第 14 步：实现关键词命中判断
+- 在 `packages/decision-engine/src/keyword-match.ts` 中实现 `exact`、`fuzzy`、`regex` 三种命中方式
+- 新增测试 `tests/keyword-match.test.ts`
+
+### 验证结果
+
+- `corepack pnpm typecheck` 通过
+- `corepack pnpm test` 通过
+- `corepack pnpm lint` 通过
+
+### 备注
+
+- 当前关键词判断已经可以输出稳定的命中结果、来源规则和优先级
+- 下一步会把它和 mention / 相关性 / 主动插话整合进总决策引擎
+
+### 下一步
+
+- 进入 implementation plan 第 15 步：实现总回复决策引擎与主动插话入口

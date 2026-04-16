@@ -1332,3 +1332,69 @@ Redis：
 ### 29.5 下一步建议
 
 下一步进入 implementation plan 第 14 步：实现关键词命中判断。
+
+## 30. 关键词命中判断实现现状
+
+### 30.1 已实现能力
+
+当前已完成 implementation plan 第 14 步：实现关键词命中判断。
+
+已实现内容：
+
+- 在 `packages/decision-engine` 中新增关键词命中模块
+- 支持 `exact` 命中
+- 支持 `fuzzy` 命中
+- 支持 `regex` 命中
+- 支持多规则优先级排序后命中
+- 会忽略禁用规则
+- 会忽略非法正则规则
+
+### 30.2 当前命中结果结构
+
+当前命中结果固定输出：
+
+- `matched`
+- `reason`
+- `ruleId`
+- `keyword`
+- `matchType`
+- `priority`
+- `responseMode`
+
+未命中时固定输出：
+
+- `matched=false`
+- `reason=no_keyword_match`
+
+### 30.3 当前规则边界
+
+当前已明确：
+
+- 规则优先按 `priority` 升序决出先后
+- 同一轮判断只返回第一条命中的有效规则
+- `regex` 命中使用大小写不敏感模式
+- 非法正则不会抛出异常，而是安全地视为未命中
+
+### 30.4 当前验证结果
+
+本轮已完成以下验证：
+
+- 多规则场景会按优先级返回首个有效命中
+- `fuzzy` 和 `regex` 可正确命中
+- 禁用规则不会命中
+- 非法正则不会误判或中断流程
+
+并已通过：
+
+- `corepack pnpm typecheck`
+- `corepack pnpm test`
+- `corepack pnpm lint`
+
+### 30.5 当前已知限制
+
+- 当前只完成命中判断，还未接入总决策优先级整合
+- 当前 `exact` 与 `fuzzy` 仍使用基础字符串包含逻辑，后续可按真实群聊噪声再收紧边界
+
+### 30.6 下一步建议
+
+下一步进入 implementation plan 第 15 步：实现总回复决策引擎与主动插话入口。
