@@ -270,3 +270,27 @@
 ### 下一步
 
 - 进入 implementation plan 第 11 步：实现消息是否与机器人相关的基础判定
+
+## 2026-04-16
+
+### 已完成
+
+- 完成 implementation plan 第 11 步：实现消息是否与机器人相关的基础判定
+- 在 `packages/decision-engine/src/relevance.ts` 中实现 mention、名字、别名、回复机器人和延续上下文判定
+- 新增测试 `tests/relevance.test.ts`
+
+### 验证结果
+
+- `corepack pnpm typecheck` 通过
+- `corepack pnpm test` 通过
+- `corepack pnpm lint` 通过
+
+### 备注
+
+- 当前判定层已经可以回答“这条消息是否和机器人相关”
+- 当前输出的是基础相关性结果，不是最终回复决策
+- 第 12 到第 15 步会在这个基础上继续叠加必回、关键词命中和总决策引擎
+
+### 下一步
+
+- 进入 implementation plan 第 12 步：实现 `@` 必回规则
