@@ -248,6 +248,26 @@ export async function createReplyAuditLog(input: {
     .onConflictDoNothing();
 }
 
+export async function updateReplyAuditLogStatus(input: {
+  db: NodePgDatabase<DatabaseSchema>;
+  replyLogId: string;
+  status: 'queued' | 'sent' | 'failed';
+  attemptCount: number;
+  contentPreview?: string;
+  sentAt?: Date;
+}): Promise<void> {
+  await input.db
+    .update(replyLogs)
+    .set({
+      status: input.status,
+      attemptCount: input.attemptCount,
+      ...(input.contentPreview ? { contentPreview: input.contentPreview } : {}),
+      ...(input.sentAt ? { sentAt: input.sentAt } : {}),
+      updatedAt: new Date(),
+    })
+    .where(eq(replyLogs.id, input.replyLogId));
+}
+
 function parseExternalId(persistedMessageId: string): string {
   const parts = persistedMessageId.split(':');
   return parts[parts.length - 1] ?? persistedMessageId;

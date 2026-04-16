@@ -7,7 +7,10 @@
     "paths": {
       "@bot-momo/config": ["packages/config/src/index.ts"],
       "@bot-momo/core": ["packages/core/src/index.ts"],
+      "@bot-momo/decision-engine": ["packages/decision-engine/src/index.ts"],
+      "@bot-momo/llm": ["packages/llm/src/index.ts"],
       "@bot-momo/memory": ["packages/memory/src/index.ts"],
+      "@bot-momo/sender": ["packages/sender/src/index.ts"],
       "drizzle-orm": ["node_modules/drizzle-orm/index.d.ts"],
       "drizzle-orm/*": ["node_modules/drizzle-orm/*"],
       "pg": ["node_modules/pg"],

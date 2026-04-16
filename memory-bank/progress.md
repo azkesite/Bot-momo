@@ -411,3 +411,36 @@
 ### 下一步
 
 - 进入 implementation plan 第 20 步：实现回复生成最小链路
+
+## 2026-04-16
+
+### 已完成
+
+- 完成 implementation plan 第 20 步：实现回复生成最小链路
+- 完成 implementation plan 第 21 步：实现 `@` 场景下的兜底占位回复
+- 完成 implementation plan 第 22 步：实现分句策略
+- 完成 implementation plan 第 23 步：实现延迟发送调度
+- 完成 implementation plan 第 24 步：实现发送结果记录
+- 在 `apps/bot-server/src/main.ts` 中接通“入站消息 -> 决策 -> 生成 -> 分句 -> 顺序发送 -> 回复日志状态更新”最小主链路
+- 新增测试：
+  - `tests/reply-generator.test.ts`
+  - `tests/placeholder.test.ts`
+  - `tests/sentence-split.test.ts`
+  - `tests/schedule.test.ts`
+  - `tests/dispatch.test.ts`
+
+### 验证结果
+
+- `corepack pnpm typecheck` 通过
+- `corepack pnpm test` 通过
+- `corepack pnpm lint` 通过
+
+### 备注
+
+- 当前回复生成使用启发式 transport，先保证主链路可测、可运行，后续再替换真实模型调用
+- 回复日志现在已经会根据发送结果回写 `sent` 或 `failed`
+- 分句与延迟调度当前为进程内顺序执行，尚未接入正式队列系统
+
+### 下一步
+
+- 进入 implementation plan 第 25 步：实现记忆回写
