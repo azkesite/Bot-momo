@@ -815,3 +815,98 @@ Redis：
 ### 22.7 下一步建议
 
 下一步进入 implementation plan 第 7 步：定义统一消息事件模型。
+## 23. 统一消息事件模型实现现状
+
+### 23.1 已实现能力
+
+当前已完成 implementation plan 第 7 步：定义统一消息事件模型。
+
+已实现内容：
+
+- 在 `packages/core` 中新增统一消息事件契约
+- 定义标准 mention 结构
+- 定义标准 reply/reference 结构
+- 定义标准发送结果结构
+- 新增统一消息事件解析入口
+- 新增统一发送结果解析入口
+- 对无效事件统一返回结构化校验错误
+
+### 23.2 当前统一消息事件字段
+
+当前标准消息事件已覆盖以下字段：
+
+- `eventType`
+- `platform`
+- `messageId`
+- `groupId`
+- `userId`
+- `nickname`
+- `content`
+- `timestamp`
+- `mentions`
+- `replyTo`
+- `rawPayload`
+
+说明：
+
+- 所有平台消息在进入业务层前都必须先转换成这套结构
+- `rawPayload` 继续保留平台原始载荷，便于审计、排障和回放
+
+### 23.3 当前标准发送结果字段
+
+当前标准发送结果已覆盖以下字段：
+
+- `status`
+- `platform`
+- `target`
+- `requestId`
+- `providerMessageId`
+- `traceId`
+- `sentenceIndex`
+- `sentenceCount`
+- `sentAt`
+- `skippedReason`
+- `errorCode`
+- `errorMessage`
+- `rawResponse`
+
+说明：
+
+- 发送层后续必须统一输出该结构
+- 这样后续 reply log、发送调度和适配器层可以共享同一契约
+
+### 23.4 当前无效事件处理规则
+
+当前已明确：
+
+- 缺失必填字段的事件直接拒绝进入业务链路
+- `content` 在 trim 后为空的事件直接拒绝
+- 校验失败统一返回 `schema_invalid`
+- 校验错误会附带字段级 issues，便于日志记录与适配器排障
+
+### 23.5 当前验证结果
+
+本轮已完成以下验证：
+
+- 标准消息事件可正确通过校验
+- mention 与 reply 关系可正确表达
+- 缺失关键字段的事件会被拒绝
+- 空内容事件会被拒绝
+- 标准发送结果可正确通过校验
+- 非法发送目标会被拒绝
+
+并已通过：
+
+- `corepack pnpm typecheck`
+- `corepack pnpm test`
+- `corepack pnpm lint`
+
+### 23.6 当前已知限制
+
+- 当前仅完成统一契约与校验，还未接入 NapCat 实际 payload 转换
+- 当前事件模型只覆盖 `message.created`，尚未扩展撤回、编辑或系统通知事件
+- 当前 `rawPayload` 与 `rawResponse` 仍为宽松保留字段，脱敏策略将在后续入库阶段补齐
+
+### 23.7 下一步建议
+
+下一步进入 implementation plan 第 8 步：实现 NapCat 平台适配器骨架。

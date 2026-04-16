@@ -166,3 +166,28 @@
 ### 下一步
 
 - 进入 implementation plan 第 7 步：定义统一消息事件模型
+## 2026-04-16
+
+### 已完成
+
+- 完成 implementation plan 第 7 步：定义统一消息事件模型
+- 在 `packages/core` 中新增统一消息事件 schema、mention schema、reply schema 和发送结果 schema
+- 新增统一消息事件解析函数与统一发送结果解析函数
+- 明确无效事件拒绝规则：缺关键字段或内容为空时直接拒绝
+- 新增统一事件模型测试 `tests/message-event.test.ts`
+
+### 验证结果
+
+- `corepack pnpm typecheck` 通过
+- `corepack pnpm test` 通过
+- `corepack pnpm lint` 通过
+
+### 备注
+
+- 当前只完成平台无关契约层，NapCat 到统一事件的真实转换会在下一步实现
+- 当前统一事件模型已经可以作为后续消息入库、决策引擎和发送调度的稳定输入边界
+- 统一发送结果结构也已经冻结，后续 sender 和平台适配层都应复用
+
+### 下一步
+
+- 进入 implementation plan 第 8 步：实现 NapCat 平台适配器骨架
