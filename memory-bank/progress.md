@@ -246,3 +246,27 @@
 ### 下一步
 
 - 进入 implementation plan 第 10 步：实现关键词规则存储与读取
+
+## 2026-04-16
+
+### 已完成
+
+- 完成 implementation plan 第 10 步：实现关键词规则存储与读取
+- 在 `packages/memory/src/keyword-rules.ts` 中实现关键词规则保存、启用切换、启用列表读取和缓存失效
+- 新增测试 `tests/keyword-rules.test.ts`
+
+### 验证结果
+
+- `corepack pnpm typecheck` 通过
+- `corepack pnpm test` 通过
+- `corepack pnpm lint` 通过
+
+### 备注
+
+- 当前关键词规则层已经能为后续命中引擎提供稳定输入源
+- 当前只处理规则配置、缓存和读取，不处理文本命中
+- 缓存 key 与失效边界已经固定，后续管理接口可以直接复用
+
+### 下一步
+
+- 进入 implementation plan 第 11 步：实现消息是否与机器人相关的基础判定
