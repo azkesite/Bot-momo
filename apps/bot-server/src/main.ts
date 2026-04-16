@@ -1,11 +1,17 @@
 import { loadConfig } from '@bot-momo/config';
 import { logProcessingError } from '@bot-momo/core';
-import { createAppContext, createAppStatus, createStartupTraceContext } from './app.js';
+import {
+  createAppContext,
+  createServer,
+  createStartupTraceContext,
+  getDependencyStatus,
+} from './app.js';
 
 try {
   const config = loadConfig();
   const app = createAppContext(config);
-  const status = createAppStatus(config);
+  const server = createServer(app);
+  const dependencyStatus = getDependencyStatus(config);
 
   app.logger.info(
     {
@@ -14,11 +20,15 @@ try {
       provider: config.defaultProvider,
       botName: config.botName,
       activeReplyEnabled: config.activeReplyEnabled,
+      dependencyStatus,
     },
     'Application startup complete',
   );
 
-  console.log(JSON.stringify(status));
+  await server.listen({
+    host: '0.0.0.0',
+    port: config.port,
+  });
 } catch (error) {
   const fallbackLogger = createAppContext({
     ...loadConfig({

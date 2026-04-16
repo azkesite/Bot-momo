@@ -6,6 +6,7 @@ export default defineConfig({
     alias: {
       '@bot-momo/config': resolve(__dirname, 'packages/config/src/index.ts'),
       '@bot-momo/core': resolve(__dirname, 'packages/core/src/index.ts'),
+      fastify: resolve(__dirname, 'node_modules/fastify/fastify.js'),
     },
   },
   test: {
