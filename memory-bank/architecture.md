@@ -516,3 +516,74 @@ Redis：
 ### 18.6 下一步建议
 
 下一步进入 implementation plan 第 3 步：建立日志与请求追踪能力。
+
+## 19. 日志与请求追踪实现现状
+
+### 19.1 已实现能力
+
+当前已完成 implementation plan 第 3 步：建立日志与请求追踪能力。
+
+已实现内容：
+
+- `packages/core` 中的统一 logger 创建入口
+- 统一 JSON 日志格式
+- `traceId` 生成与链路传递
+- 固定事件日志 helper
+- 错误日志结构化输出
+- `bot-server` 启动日志接入
+
+### 19.2 当前固定日志事件
+
+当前已定义并可直接复用的日志事件包括：
+
+- `message.received`
+- `reply.decision`
+- `send.task.queued`
+- `memory.write`
+- `processing.error`
+- `app.startup`
+
+### 19.3 当前固定链路字段
+
+当前日志链路中重点固定的字段包括：
+
+- `service`
+- `traceId`
+- `messageId`
+- `groupId`
+- `userId`
+- `event`
+
+不同事件会附加各自业务字段，例如：
+
+- `decision`
+- `reason`
+- `confidence`
+- `taskId`
+- `sentenceCount`
+- `memoryScope`
+- `phase`
+
+### 19.4 当前验证结果
+
+本轮已完成以下验证：
+
+- 同一条模拟消息处理链路中的所有日志共享同一个 `traceId`
+- 消息接收、决策、发送任务、记忆写入都能输出结构化日志
+- 异常日志包含 `traceId`、`phase` 和结构化错误对象
+
+并已通过：
+
+- `corepack pnpm typecheck`
+- `corepack pnpm test`
+- `corepack pnpm lint`
+
+### 19.5 当前已知限制
+
+- 目前 trace 仍是进程内基础实现，尚未接入 HTTP request 或 NapCat 事件入口
+- 目前尚未实现日志持久化或外部采集
+- 当前仅覆盖了基础事件类型，后续会随业务模块继续补充
+
+### 19.6 下一步建议
+
+下一步进入 implementation plan 第 4 步：实现健康检查与服务启动入口。

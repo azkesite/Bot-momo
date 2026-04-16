@@ -54,3 +54,30 @@
 ### 下一步
 
 - 进入 implementation plan 第 3 步：建立日志与请求追踪能力
+
+## 2026-04-16
+
+### 已完成
+
+- 完成 implementation plan 第 3 步：建立日志与请求追踪能力
+- 在 `packages/core` 中引入 Pino 并建立统一 logger 创建入口
+- 实现 `traceId` 生成与链路上下文
+- 实现消息接收、决策、发送任务、记忆写入、异常等固定日志 helper
+- 将 `bot-server` 启动入口接入结构化日志
+- 新增日志测试 `tests/logging.test.ts`
+
+### 验证结果
+
+- `corepack pnpm typecheck` 通过
+- `corepack pnpm test` 通过
+- `corepack pnpm lint` 通过
+
+### 备注
+
+- 当前日志层已满足第 3 步要求，但还未接入真实 NapCat webhook / 事件流
+- `traceId` 当前为本地生成，后续可扩展为 HTTP/消息入口统一注入
+- 当前日志事件已固定第一批命名，后续功能可以在此基础上扩展
+
+### 下一步
+
+- 进入 implementation plan 第 4 步：实现健康检查与服务启动入口

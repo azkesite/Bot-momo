@@ -4,7 +4,8 @@
   "version": "0.1.0",
   "type": "module",
   "dependencies": {
-    "@bot-momo/config": "workspace:*"
+    "@bot-momo/config": "workspace:*",
+    "@bot-momo/core": "workspace:*"
   },
   "scripts": {
     "dev": "node --enable-source-maps ./src/main.ts",
