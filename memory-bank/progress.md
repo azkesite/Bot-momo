@@ -294,3 +294,49 @@
 ### 下一步
 
 - 进入 implementation plan 第 12 步：实现 `@` 必回规则
+
+## 2026-04-16
+
+### 已完成
+
+- 完成 implementation plan 第 12 步：实现 `@` 必回规则
+- 在 `packages/decision-engine/src/must-reply.ts` 中实现 mention 提升为 `must_reply`
+- 新增测试 `tests/must-reply.test.ts`
+
+### 验证结果
+
+- `corepack pnpm typecheck` 通过
+- `corepack pnpm test` 通过
+- `corepack pnpm lint` 通过
+
+### 备注
+
+- 当前 mention 已经拥有最高优先级的基础决策地位
+- 这一步还没有整合关键词和总决策引擎
+
+### 下一步
+
+- 进入 implementation plan 第 13 步：实现基础去重与防重复发送
+
+## 2026-04-16
+
+### 已完成
+
+- 完成 implementation plan 第 13 步：实现基础去重与防重复发送
+- 在 `packages/sender/src/dedupe.ts` 中实现发送任务幂等 key 和 claim 逻辑
+- 新增测试 `tests/sender-dedupe.test.ts`
+
+### 验证结果
+
+- `corepack pnpm typecheck` 通过
+- `corepack pnpm test` 通过
+- `corepack pnpm lint` 通过
+
+### 备注
+
+- 当前已经补上发送层最小幂等边界
+- 这一步只做发送任务防重，不做真实发送调度
+
+### 下一步
+
+- 进入 implementation plan 第 14 步：实现关键词命中判断

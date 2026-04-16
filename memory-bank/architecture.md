@@ -1240,3 +1240,95 @@ Redis：
 ### 27.6 下一步建议
 
 下一步进入 implementation plan 第 12 步：实现 `@` 必回规则。
+
+## 28. `@` 必回规则实现现状
+
+### 28.1 已实现能力
+
+当前已完成 implementation plan 第 12 步：实现 `@` 必回规则。
+
+已实现内容：
+
+- 在 `packages/decision-engine` 中新增 `@` 必回规则模块
+- 将 `mentioned` 相关性结果提升为 `must_reply`
+- 保留非 mention 场景的原始原因与置信度
+- 明确 mention 规则不可被低优先级 fallback 覆盖
+
+### 28.2 当前规则边界
+
+当前已明确：
+
+- 只要基础相关性原因是 `mentioned`，决策结果固定为 `must_reply`
+- `mentioned` 的置信度固定为 `1`
+- 非 mention 场景不在本步骤被强制抬高
+- 非相关消息仍保持 `skip`
+
+### 28.3 当前验证结果
+
+本轮已完成以下验证：
+
+- mention 场景会稳定返回 `must_reply`
+- 名字相关但非 mention 的消息不会被误判为 `must_reply`
+- 普通不相关消息会保持 `skip`
+
+并已通过：
+
+- `corepack pnpm typecheck`
+- `corepack pnpm test`
+- `corepack pnpm lint`
+
+### 28.4 当前已知限制
+
+- 当前仅覆盖 `@` 必回，不包含关键词必回和总决策整合
+- 当前决策结果还没有接入完整回复生成链路
+
+### 28.5 下一步建议
+
+下一步进入 implementation plan 第 13 步：实现基础去重与防重复发送。
+
+## 29. 基础去重与防重复发送实现现状
+
+### 29.1 已实现能力
+
+当前已完成 implementation plan 第 13 步：实现基础去重与防重复发送机制。
+
+已实现内容：
+
+- 在 `packages/sender` 中新增发送任务去重模块
+- 实现发送任务幂等 key 生成
+- 实现发送任务 claim 入口
+- 支持单条发送任务防重
+- 支持按 sentence index 隔离的拆句发送任务防重
+
+### 29.2 当前去重策略
+
+当前已明确：
+
+- 发送任务 dedupe key 结构：`bot-momo:send-task:{messageId}:{taskId}:{sentenceIndex|single}`
+- 同一消息、同一任务、同一句序号只允许首次 claim 成功
+- 再次 claim 同一任务时会返回 `duplicate=true`
+- 不同 sentence index 的拆句任务彼此独立
+
+### 29.3 当前验证结果
+
+本轮已完成以下验证：
+
+- 单条发送任务 key 稳定可预测
+- 重复 claim 同一发送任务时会被识别为 duplicate
+- 拆句发送任务在不同 sentence index 下互不冲突
+
+并已通过：
+
+- `corepack pnpm typecheck`
+- `corepack pnpm test`
+- `corepack pnpm lint`
+
+### 29.4 当前已知限制
+
+- 当前只完成发送任务防重，不包含真实发送调度
+- 当前尚未把发送层防重接入 NapCat sender 调用链
+- 当前还没有失败重试与状态回写
+
+### 29.5 下一步建议
+
+下一步进入 implementation plan 第 14 步：实现关键词命中判断。
