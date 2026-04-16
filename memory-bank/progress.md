@@ -218,3 +218,31 @@
 ### 下一步
 
 - 进入 implementation plan 第 9 步：实现消息入库与基础审计
+
+## 2026-04-16
+
+### 已完成
+
+- 完成 implementation plan 第 9 步：实现消息入库与基础审计
+- 在 `packages/memory/src/message-audit.ts` 中实现统一事件入库编排
+- 实现群、用户、消息记录的自动 upsert / insert
+- 实现 Redis 入站消息去重 key
+- 实现基础审计查询接口
+- 将 NapCat 事件回调接入消息入库链路
+- 新增测试 `tests/message-audit.test.ts`
+
+### 验证结果
+
+- `corepack pnpm typecheck` 通过
+- `corepack pnpm test` 通过
+- `corepack pnpm lint` 通过
+
+### 备注
+
+- 当前已经打通“NapCat 入站 -> 统一事件 -> 幂等入库 -> 基础审计”的最小闭环
+- 当前 reply log 仍是审计占位记录，真正的决策与发送状态会在后续步骤补齐
+- 当前 dedupe 只针对消息入库，不代表完整回复发送防重
+
+### 下一步
+
+- 进入 implementation plan 第 10 步：实现关键词规则存储与读取

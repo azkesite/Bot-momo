@@ -1,5 +1,18 @@
 import { loadConfig } from '@bot-momo/config';
-import { logProcessingError } from '@bot-momo/core';
+import {
+  connectRedisClient,
+  createRedisClient,
+  createRedisStateStore,
+  logMemoryWrite,
+  logProcessingError,
+  registerRedisLogging,
+} from '@bot-momo/core';
+import {
+  createDatabaseClient,
+  createMessageAuditPersistence,
+  createReplyAuditLog,
+  persistIncomingMessageEvent,
+} from '@bot-momo/memory';
 import {
   createAppContext,
   createServer,
@@ -10,8 +23,43 @@ import {
 try {
   const config = loadConfig();
   const app = createAppContext(config);
+  const redisClient = createRedisClient(config.redisUrl);
+  registerRedisLogging(redisClient, app.logger);
+  await connectRedisClient(redisClient);
+  const stateStore = createRedisStateStore(redisClient);
+  const { client: dbClient, db } = await createDatabaseClient(config.databaseUrl);
+  const auditPersistence = createMessageAuditPersistence(db);
   const server = createServer(app);
   const dependencyStatus = getDependencyStatus(config);
+
+  app.onNapCatEvent = async (event, trace) => {
+    const result = await persistIncomingMessageEvent({
+      event,
+      dedupeStore: stateStore,
+      persistence: auditPersistence,
+    });
+
+    if (result.status === 'inserted') {
+      await createReplyAuditLog({
+        db,
+        replyLogId: `${result.persistedMessageId}:audit`,
+        persistedMessageId: result.persistedMessageId,
+        traceId: trace.traceId,
+        decisionAction: 'skip',
+        decisionReason: 'audited_only',
+        contentPreview: event.content.slice(0, 80),
+      });
+
+      logMemoryWrite(app.logger, {
+        ...trace,
+        messageId: event.messageId,
+        groupId: event.groupId,
+        userId: event.userId,
+        memoryScope: 'short_term',
+        summary: `Audited incoming message ${result.persistedMessageId}.`,
+      });
+    }
+  };
 
   app.logger.info(
     {
@@ -28,6 +76,10 @@ try {
   await server.listen({
     host: '0.0.0.0',
     port: config.port,
+  });
+
+  server.addHook('onClose', async () => {
+    await Promise.allSettled([redisClient.quit(), dbClient.end()]);
   });
 } catch (error) {
   const fallbackLogger = createAppContext({

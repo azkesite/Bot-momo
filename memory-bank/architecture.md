@@ -1018,3 +1018,86 @@ Redis：
 ### 24.8 下一步建议
 
 下一步进入 implementation plan 第 9 步：实现消息入库与基础审计。
+
+## 25. 消息入库与基础审计实现现状
+
+### 25.1 已实现能力
+
+当前已完成 implementation plan 第 9 步：实现消息入库与基础审计。
+
+已实现内容：
+
+- 在 `packages/memory` 中新增消息审计编排模块
+- 实现统一事件到数据库记录的入库编排
+- 实现群记录与用户记录的自动 upsert
+- 实现消息去重 key 规则
+- 实现原始 payload 与标准字段的持久化
+- 实现基础审计查询接口
+- 实现基础 reply log 写入
+- 将 NapCat 事件回调接入消息入库链路
+
+### 25.2 当前入库策略
+
+当前已明确：
+
+- `group_id` 统一映射到平台化 `group` 记录主键
+- `user_id` 统一映射到平台化 `user` 记录主键
+- `message_id` 统一映射到平台化 `message` 记录主键
+- 首次收到事件时先 upsert 群和用户，再写入消息表
+- `rawPayload` 保留原始 NapCat 载荷
+- `mentionedBot` 根据统一事件 mention 信息写入
+- `replyTo` 会映射到统一的持久化消息 id
+
+### 25.3 当前去重策略
+
+当前已实现：
+
+- 入站消息 dedupe key：`incoming-message:{platform}:{messageId}`
+- dedupe 状态保存在 Redis `dedupe` TTL 策略下
+- 如果 dedupe 命中，则本轮事件返回 `duplicate`
+- 如果数据库层发生主键冲突，则消息写入结果也会回退为 `duplicate`
+
+说明：
+
+- 当前去重目标是保证消息入库幂等
+- 当前不负责回复发送层的防重复发送，那部分仍在后续步骤实现
+
+### 25.4 当前审计能力
+
+当前已具备以下基础审计能力：
+
+- 通过持久化消息主键查询标准审计记录
+- 在消息首次入库后写入基础 reply log
+- 当前默认写入一条 `audited_only` / `skip` 的占位审计记录
+
+说明：
+
+- 这条基础 reply log 的作用是先打通消息审计闭环
+- 真正的决策动作、回复内容和发送状态将在后续决策与发送步骤覆盖
+
+### 25.5 当前验证结果
+
+本轮已完成以下验证：
+
+- 首次统一事件可正确完成群、用户、消息的入库编排
+- 审计记录可从持久化 id 读取
+- dedupe 命中时会直接返回 `duplicate`
+- 平台化 group/user/message id 规则稳定可预测
+- NapCat 事件回调已接入真实入库编排链路
+
+并已通过：
+
+- `corepack pnpm typecheck`
+- `corepack pnpm test`
+- `corepack pnpm lint`
+
+### 25.6 当前已知限制
+
+- 当前测试以可控内存持久化替身验证编排逻辑，数据库真连通集成校验会在后续更完整链路中继续补强
+- 当前 reply log 仍是基础占位审计，不代表真实回复决策结果
+- 当前尚未对 `rawPayload` 做更细粒度脱敏
+- 当前还没有管理接口层去读取这些审计数据
+
+### 25.7 下一步建议
+
+下一步进入 implementation plan 第 10 步：实现关键词规则存储与读取。
