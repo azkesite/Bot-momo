@@ -10,7 +10,8 @@
       "@bot-momo/memory": ["packages/memory/src/index.ts"],
       "drizzle-orm": ["node_modules/drizzle-orm/index.d.ts"],
       "drizzle-orm/*": ["node_modules/drizzle-orm/*"],
-      "pg": ["node_modules/pg"]
+      "pg": ["node_modules/pg"],
+      "redis": ["node_modules/redis/dist/index.d.ts"]
     },
     "strict": true,
     "noUncheckedIndexedAccess": true,

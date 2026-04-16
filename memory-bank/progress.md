@@ -139,3 +139,30 @@
 ### 下一步
 
 - 进入 implementation plan 第 6 步：建立 Redis 连接与基础状态能力
+
+## 2026-04-16
+
+### 已完成
+
+- 完成 implementation plan 第 6 步：建立 Redis 连接与基础状态能力
+- 在 `packages/core` 中建立 Redis client、key builder、TTL 策略和基础状态封装
+- 新增 Redis 验证脚本 `redis:verify`
+- 新增 Redis 单元测试 `tests/redis.test.ts`
+- 在真实 Redis 容器上完成连接、写入、读取、TTL 过期验证
+
+### 验证结果
+
+- `corepack pnpm redis:verify` 通过
+- `corepack pnpm typecheck` 通过
+- `corepack pnpm test` 通过
+- `corepack pnpm lint` 通过
+
+### 备注
+
+- 当前 Redis 层是基础设施层，后续第 13 步的去重与防重复发送会复用它
+- Redis 容器已经可以通过 `infra/docker/docker-compose.yml` 启动
+- 当前 `/health` 还没有接入真实 Redis 连通性探针
+
+### 下一步
+
+- 进入 implementation plan 第 7 步：定义统一消息事件模型

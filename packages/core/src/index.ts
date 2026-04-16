@@ -5,6 +5,8 @@ import pino, { type DestinationStream, type Logger, type LoggerOptions } from 'p
 
 export const CORE_PACKAGE_NAME = '@bot-momo/core';
 
+export * from './redis.js';
+
 export type TraceContext = {
   traceId: string;
   messageId?: string;

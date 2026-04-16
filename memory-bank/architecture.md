@@ -733,3 +733,85 @@ Redis：
 ### 21.7 下一步建议
 
 下一步进入 implementation plan 第 6 步：建立 Redis 连接与基础状态能力。
+
+## 22. Redis 连接与基础状态实现现状
+
+### 22.1 已实现能力
+
+当前已完成 implementation plan 第 6 步：建立 Redis 连接与基础状态能力。
+
+已实现内容：
+
+- 基于 `redis` 客户端的连接创建入口
+- Redis 重连策略
+- Redis 连接事件日志
+- 通用 key 前缀与命名规范
+- TTL 策略常量
+- 基础文本 / JSON 读写封装
+- Redis 验证脚本
+
+### 22.2 当前 key 规范
+
+当前 key 统一格式为：
+
+- `bot-momo:{namespace}:{part1}:{part2}...`
+
+当前已预留的 namespace 包括：
+
+- `dedupe`
+- `short-state`
+- `active-reply`
+- `send-task`
+- `context`
+- `test`
+
+### 22.3 当前 TTL 策略
+
+当前已固定的 TTL 策略包括：
+
+- `dedupe`
+- `shortTermState`
+- `activeReply`
+- `sendTask`
+- `test`
+
+说明：
+
+- 当前 TTL 值已集中在代码中统一定义
+- 后续业务模块必须复用这些策略，而不是各自随意写过期秒数
+
+### 22.4 当前日志事件
+
+当前 Redis 连接层已输出以下诊断日志：
+
+- `redis.connect`
+- `redis.ready`
+- `redis.reconnecting`
+- `redis.error`
+- `redis.end`
+
+### 22.5 当前验证结果
+
+本轮已完成以下验证：
+
+- Redis key 命名测试通过
+- Redis 文本 / JSON 读写测试通过
+- Redis 连接事件日志测试通过
+- 在真实 Redis 容器上完成连接、写入、读取、过期验证
+
+并已通过：
+
+- `corepack pnpm redis:verify`
+- `corepack pnpm typecheck`
+- `corepack pnpm test`
+- `corepack pnpm lint`
+
+### 22.6 当前已知限制
+
+- 当前 Redis 层还是基础设施，尚未接入去重、主动插话或发送调度业务
+- 当前 Redis 健康状态尚未接入 `/health` 的真实连通性探针
+- 当前只实现了基础状态封装，没有做批量操作或锁语义
+
+### 22.7 下一步建议
+
+下一步进入 implementation plan 第 7 步：定义统一消息事件模型。

@@ -18,6 +18,7 @@ export default defineConfig({
       ),
       fastify: resolve(__dirname, 'node_modules/fastify/fastify.js'),
       pg: resolve(__dirname, 'node_modules/pg/esm/index.mjs'),
+      redis: resolve(__dirname, 'node_modules/redis/dist/index.js'),
     },
   },
   test: {
