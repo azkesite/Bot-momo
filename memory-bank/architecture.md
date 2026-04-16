@@ -1398,3 +1398,68 @@ Redis：
 ### 30.6 下一步建议
 
 下一步进入 implementation plan 第 15 步：实现总回复决策引擎与主动插话入口。
+
+## 31. 总回复决策引擎与主动插话入口实现现状
+
+### 31.1 已实现能力
+
+当前已完成 implementation plan 第 15 步：实现总回复决策引擎与主动插话入口。
+
+已实现内容：
+
+- 在 `packages/decision-engine` 中新增总决策引擎模块
+- 整合 mention 必回、关键词命中、基础相关性判定和主动插话概率入口
+- 输出统一的 `must_reply / should_reply / skip` 决策结果
+- 保留基础相关性结果
+- 保留关键词命中结果
+- 支持注入固定随机值，便于测试主动插话逻辑
+
+### 31.2 当前优先级顺序
+
+当前总决策引擎已固定以下优先级：
+
+- mention -> `must_reply`
+- keyword_hit -> `must_reply`
+- relevance.shouldReply -> `should_reply`
+- active_reply_candidate -> `should_reply`
+- not_relevant -> `skip`
+
+说明：
+
+- 主动插话只在前面都没有命中时才会进入
+- 当前主动插话仍是候选入口，不是最终发送行为
+
+### 31.3 当前主动插话规则
+
+当前已明确：
+
+- 主动插话受 `enabled` 开关控制
+- 主动插话受 `baseProbability` 控制
+- 主动插话支持注入 `randomValue`，便于稳定测试
+- 当随机值小于基础概率时，返回 `active_reply_candidate`
+
+### 31.4 当前验证结果
+
+本轮已完成以下验证：
+
+- mention 场景会优先返回 `must_reply`
+- 关键词命中场景会优先返回 `must_reply`
+- 普通相关消息会返回 `should_reply`
+- 无关消息在命中主动插话概率时会返回 `active_reply_candidate`
+- 无关消息在未命中主动插话概率时会返回 `skip`
+
+并已通过：
+
+- `corepack pnpm typecheck`
+- `corepack pnpm test`
+- `corepack pnpm lint`
+
+### 31.5 当前已知限制
+
+- 当前总决策引擎仍是纯函数，还未接入应用层主处理链路
+- 当前尚未整合回复机器人消息必回等更细的业务规则
+- 当前主动插话仍未接入群聊热度、近期话题等更复杂门槛
+
+### 31.6 下一步建议
+
+下一步进入 implementation plan 第 16 步：实现用户记忆基础模型。

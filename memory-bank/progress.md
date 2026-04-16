@@ -363,3 +363,27 @@
 ### 下一步
 
 - 进入 implementation plan 第 15 步：实现总回复决策引擎与主动插话入口
+
+## 2026-04-16
+
+### 已完成
+
+- 完成 implementation plan 第 15 步：实现总回复决策引擎与主动插话入口
+- 在 `packages/decision-engine/src/decision.ts` 中整合 mention、关键词、相关性和主动插话概率
+- 新增测试 `tests/decision-engine.test.ts`
+
+### 验证结果
+
+- `corepack pnpm typecheck` 通过
+- `corepack pnpm test` 通过
+- `corepack pnpm lint` 通过
+
+### 备注
+
+- 当前已经具备统一的第一层回复决策入口
+- 决策引擎目前还是纯函数，后续接业务链时风险比较低
+- 主动插话已经进入决策层，但还没接到真实发送链路
+
+### 下一步
+
+- 进入 implementation plan 第 16 步：实现用户记忆基础模型
