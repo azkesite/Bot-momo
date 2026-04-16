@@ -17,6 +17,7 @@ export type UserMemoryProfile = {
 };
 
 export type UserMemoryStore = {
+  getByUserId: (userId: string) => Promise<UserMemoryProfile | null>;
   getOrCreate: (input: { id: string; userId: string; nickname?: string }) => Promise<UserMemoryProfile>;
   update: (input: {
     id: string;
@@ -32,6 +33,14 @@ export type UserMemoryStore = {
 
 export function createUserMemoryStore(db: NodePgDatabase<DatabaseSchema>): UserMemoryStore {
   return {
+    async getByUserId(userId) {
+      const existing = await db.query.userMemories.findFirst({
+        where: eq(userMemories.userId, userId),
+      });
+
+      return existing ? mapUserMemoryProfile(existing) : null;
+    },
+
     async getOrCreate(input) {
       const existing = await db.query.userMemories.findFirst({
         where: eq(userMemories.userId, input.userId),

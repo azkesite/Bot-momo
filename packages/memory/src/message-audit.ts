@@ -1,4 +1,4 @@
-import { eq } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import type { NodePgDatabase } from 'drizzle-orm/node-postgres';
 import type { RedisStateStore, UnifiedMessageEvent } from '@bot-momo/core';
 
@@ -55,6 +55,20 @@ export type MessageAuditPersistence = {
     sentAt: Date;
   }) => Promise<'inserted' | 'duplicate'>;
   getMessageAuditRecord: (messageId: string) => Promise<MessageAuditRecord | null>;
+};
+
+export type ReplyAuditLogRecord = {
+  id: string;
+  messageId: string;
+  traceId: string;
+  decisionAction: string;
+  decisionReason: string;
+  contentPreview: string;
+  status: 'queued' | 'sent' | 'failed';
+  attemptCount: number;
+  sentAt?: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 };
 
 export function createMessageAuditPersistence(
@@ -266,6 +280,30 @@ export async function updateReplyAuditLogStatus(input: {
       updatedAt: new Date(),
     })
     .where(eq(replyLogs.id, input.replyLogId));
+}
+
+export async function listRecentReplyAuditLogs(input: {
+  db: NodePgDatabase<DatabaseSchema>;
+  limit?: number;
+}): Promise<ReplyAuditLogRecord[]> {
+  const records = await input.db.query.replyLogs.findMany({
+    orderBy: [desc(replyLogs.createdAt)],
+    limit: input.limit ?? 20,
+  });
+
+  return records.map((record) => ({
+    id: record.id,
+    messageId: record.messageId,
+    traceId: record.traceId,
+    decisionAction: record.decisionAction,
+    decisionReason: record.decisionReason,
+    contentPreview: record.contentPreview,
+    status: record.status,
+    attemptCount: record.attemptCount,
+    ...(record.sentAt ? { sentAt: record.sentAt } : {}),
+    createdAt: record.createdAt,
+    updatedAt: record.updatedAt,
+  }));
 }
 
 function parseExternalId(persistedMessageId: string): string {

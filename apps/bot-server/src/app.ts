@@ -32,6 +32,13 @@ export type AppContext = {
   config: AppConfig;
   logger: ReturnType<typeof createLogger>;
   onNapCatEvent?: NapCatEventHandler;
+  adminHandlers?: {
+    getHealth: () => Promise<unknown> | unknown;
+    listKeywordRules: () => Promise<unknown> | unknown;
+    createKeywordRule: (body: unknown) => Promise<unknown> | unknown;
+    getUserMemory: (userId: string) => Promise<unknown> | unknown;
+    listReplyLogs: () => Promise<unknown> | unknown;
+  };
 };
 
 export function createAppContext(config: AppConfig): AppContext {
@@ -84,6 +91,20 @@ export function getDependencyStatus(config: AppConfig): DependencyStatus {
 
 export function createServer(app: AppContext): FastifyInstance {
   const server = Fastify();
+
+  async function ensureAdmin(request: { headers: Record<string, unknown> }, reply: { status: (code: number) => { send: (body: unknown) => unknown } }): Promise<boolean> {
+    const token = request.headers['x-admin-token'];
+
+    if (typeof token !== 'string' || token !== app.config.adminToken) {
+      void reply.status(401).send({
+        ok: false,
+        error: 'unauthorized',
+      });
+      return false;
+    }
+
+    return true;
+  }
 
   server.setErrorHandler((error, _request, reply) => {
     app.logger.error(
@@ -148,6 +169,63 @@ export function createServer(app: AppContext): FastifyInstance {
         userId: result.event.userId,
       },
     });
+  });
+
+  server.get('/admin/health', async (request, reply) => {
+    if (!(await ensureAdmin(request, reply))) {
+      return;
+    }
+
+    return {
+      ok: true,
+      data: app.adminHandlers ? await app.adminHandlers.getHealth() : createAppStatus(app.config),
+    };
+  });
+
+  server.get('/admin/keyword-rules', async (request, reply) => {
+    if (!(await ensureAdmin(request, reply))) {
+      return;
+    }
+
+    return {
+      ok: true,
+      data: app.adminHandlers ? await app.adminHandlers.listKeywordRules() : [],
+    };
+  });
+
+  server.post('/admin/keyword-rules', async (request, reply) => {
+    if (!(await ensureAdmin(request, reply))) {
+      return;
+    }
+
+    return {
+      ok: true,
+      data: app.adminHandlers ? await app.adminHandlers.createKeywordRule(request.body) : null,
+    };
+  });
+
+  server.get('/admin/users/:userId/memory', async (request, reply) => {
+    if (!(await ensureAdmin(request, reply))) {
+      return;
+    }
+
+    const { userId } = request.params as { userId: string };
+
+    return {
+      ok: true,
+      data: app.adminHandlers ? await app.adminHandlers.getUserMemory(userId) : null,
+    };
+  });
+
+  server.get('/admin/reply-logs', async (request, reply) => {
+    if (!(await ensureAdmin(request, reply))) {
+      return;
+    }
+
+    return {
+      ok: true,
+      data: app.adminHandlers ? await app.adminHandlers.listReplyLogs() : [],
+    };
   });
 
   return server;

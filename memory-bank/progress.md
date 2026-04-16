@@ -444,3 +444,34 @@
 ### 下一步
 
 - 进入 implementation plan 第 25 步：实现记忆回写
+
+## 2026-04-16
+
+### 已完成
+
+- 完成 implementation plan 第 25 步：实现记忆回写
+- 完成 implementation plan 第 26 步：实现最近对话摘要
+- 完成 implementation plan 第 27 步：实现管理接口的最小集
+- 完成 implementation plan 第 28 步：建立端到端消息回放测试
+- 完成 implementation plan 第 29 步：建立异常与降级测试
+- 完成 implementation plan 第 30 步：进行 MVP 验收
+- 新增 `apps/bot-server/src/message-processor.ts`，把消息处理主链路抽成独立可测模块
+- 新增群级/用户级摘要存储、memory facts 存储、记忆回写计划器
+- 新增管理接口与 `X-Admin-Token` 鉴权
+- 产出 `memory-bank/mvp-acceptance.md`
+
+### 验证结果
+
+- `corepack pnpm typecheck` 通过
+- `corepack pnpm test` 通过
+- `corepack pnpm lint` 通过
+
+### 备注
+
+- 目前自动化测试总计 29 个测试文件、86 条用例，已经覆盖 MVP 主链路、路由调试能力和主要降级路径
+- 当前 MVP 验收以自动化回放与降级测试为主，真实 QQ 群联调仍建议作为下一阶段第一件事
+- 这次初版已经具备被 `@` 必回、关键词触发、非全量回复、分句发送、用户记忆回写与调试查看能力
+
+### 下一步
+
+- 进入真实环境灰度联调，优先替换真实 LLM transport 并补任务队列

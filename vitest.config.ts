@@ -6,7 +6,10 @@ export default defineConfig({
     alias: {
       '@bot-momo/config': resolve(__dirname, 'packages/config/src/index.ts'),
       '@bot-momo/core': resolve(__dirname, 'packages/core/src/index.ts'),
+      '@bot-momo/decision-engine': resolve(__dirname, 'packages/decision-engine/src/index.ts'),
+      '@bot-momo/llm': resolve(__dirname, 'packages/llm/src/index.ts'),
       '@bot-momo/memory': resolve(__dirname, 'packages/memory/src/index.ts'),
+      '@bot-momo/sender': resolve(__dirname, 'packages/sender/src/index.ts'),
       'drizzle-orm/pg-core': resolve(__dirname, 'node_modules/drizzle-orm/pg-core/index.js'),
       'drizzle-orm/node-postgres': resolve(
         __dirname,

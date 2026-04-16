@@ -1,24 +1,23 @@
 import { loadConfig } from '@bot-momo/config';
-import { decideReply } from '@bot-momo/decision-engine';
 import {
   connectRedisClient,
   createRedisClient,
   createRedisStateStore,
-  logMemoryWrite,
   logProcessingError,
   registerRedisLogging,
 } from '@bot-momo/core';
-import { createLlmProvider, generateReply, type LlmRequest, type LlmResponse } from '@bot-momo/llm';
+import { createLlmProvider, type LlmRequest, type LlmResponse } from '@bot-momo/llm';
 import {
+  createConversationSummaryStore,
   createKeywordRuleStore,
   createDatabaseClient,
+  createMemoryFactStore,
   createMessageAuditPersistence,
   createReplyAuditLog,
-  createShortContextMessage,
   createShortContextStore,
   createUserMemoryStore,
-  loadActiveKeywordRules,
-  persistIncomingMessageEvent,
+  listRecentReplyAuditLogs,
+  saveKeywordRule,
   updateReplyAuditLogStatus,
 } from '@bot-momo/memory';
 import { createNapCatSender } from './napcat-adapter.js';
@@ -28,13 +27,7 @@ import {
   createStartupTraceContext,
   getDependencyStatus,
 } from './app.js';
-import {
-  buildPlaceholderReply,
-  createSendSchedule,
-  dispatchReplyTask,
-  shouldSendPlaceholder,
-  splitReplyText,
-} from '@bot-momo/sender';
+import { createMessageProcessor } from './message-processor.js';
 
 try {
   const config = loadConfig();
@@ -47,169 +40,87 @@ try {
   const auditPersistence = createMessageAuditPersistence(db);
   const keywordRuleStore = createKeywordRuleStore(db);
   const userMemoryStore = createUserMemoryStore(db);
+  const memoryFactStore = createMemoryFactStore(db);
+  const conversationSummaryStore = createConversationSummaryStore(db);
   const shortContextStore = createShortContextStore(stateStore);
   const napCatSender = createNapCatSender(config);
   const llmProvider = createLlmProvider(createHeuristicTransport());
-  const server = createServer(app);
   const dependencyStatus = getDependencyStatus(config);
-
+  const processMessage = createMessageProcessor({
+    config,
+    logger: app.logger,
+    stateStore,
+    auditPersistence,
+    replyAuditStore: {
+      create: (input) =>
+        createReplyAuditLog({
+          db,
+          ...input,
+        }),
+      updateStatus: (input) =>
+        updateReplyAuditLogStatus({
+          db,
+          ...input,
+        }),
+    },
+    keywordRuleStore,
+    userMemoryStore,
+    memoryFactStore,
+    shortContextStore,
+    conversationSummaryStore,
+    llmProvider,
+    sendGroupMessage: (input) => napCatSender.sendGroupMessage(input),
+  });
   app.onNapCatEvent = async (event, trace) => {
-    const result = await persistIncomingMessageEvent({
-      event,
-      dedupeStore: stateStore,
-      persistence: auditPersistence,
-    });
-
-    if (result.status !== 'inserted') {
-      return;
-    }
-
-    const existingGroupContext = await shortContextStore.getGroupMessages(event.groupId);
-    const existingUserContext = await shortContextStore.getUserMessages(event.groupId, event.userId);
-    const userMemory = await userMemoryStore.getOrCreate({
-      id: `${result.userRecordId}:memory`,
-      userId: result.userRecordId,
-      nickname: event.nickname,
-    });
-    const keywordRules = await loadActiveKeywordRules({
-      store: keywordRuleStore,
-      cache: stateStore,
-    });
-    const replyContext = mergeUniqueStrings(
-      existingGroupContext
-        .slice(-4)
-        .map((message) => `${message.nickname}: ${message.content}`),
-      existingUserContext
-        .slice(-2)
-        .map((message) => `${message.nickname}: ${message.content}`),
-    );
-
-    const decision = decideReply({
-      event,
-      identity: {
-        botName: config.botName,
-        botAliases: config.botAliases,
-      },
-      keywordRules,
-      activeReply: {
-        enabled: config.activeReplyEnabled,
-        baseProbability: config.activeReplyBaseProbability,
-      },
-    });
-
-    const replyLogId = `${result.persistedMessageId}:reply`;
-
-    await createReplyAuditLog({
-      db,
-      replyLogId,
-      persistedMessageId: result.persistedMessageId,
-      traceId: trace.traceId,
-      decisionAction: decision.action,
-      decisionReason: decision.reason,
-      contentPreview: event.content.slice(0, 80),
-    });
-
-    await shortContextStore.appendGroupMessage(event.groupId, createShortContextMessage(event));
-    await shortContextStore.appendUserMessage(event.groupId, event.userId, createShortContextMessage(event));
-
-    if (decision.action === 'skip') {
-      return;
-    }
-
-    try {
-      if (shouldSendPlaceholder({ isMention: decision.reason === 'mentioned', expectedWaitMs: 0 })) {
-        await napCatSender.sendGroupMessage({
-          groupId: event.groupId,
-          content: buildPlaceholderReply(),
-          requestId: `${replyLogId}:placeholder`,
-          replyToMessageId: event.messageId,
-          traceId: trace.traceId,
-        });
-      }
-
-      const reply = await generateReply({
-        provider: llmProvider,
-        providerName: config.defaultProvider,
-        model: 'default-chat-model',
-        messageText: event.content,
-        botName: config.botName,
-        decisionReason: decision.reason,
-        shortContext: replyContext,
-        memorySummary: userMemory.relationshipSummary,
-        timeoutMs: 800,
-      });
-
-      const split = splitReplyText(reply.text);
-      const schedule = createSendSchedule(split.sentences);
-
-      await dispatchReplyTask({
-        task: {
-          messageId: event.messageId,
-          taskId: replyLogId,
-          groupId: event.groupId,
-          replyToMessageId: event.messageId,
-          traceId: trace.traceId,
-          sentences: schedule,
-        },
-        store: stateStore,
-        send: async (sendInput) => {
-          await napCatSender.sendGroupMessage(sendInput);
-        },
-      });
-
-      await updateReplyAuditLogStatus({
-        db,
-        replyLogId,
-        status: 'sent',
-        attemptCount: schedule.length,
-        contentPreview: reply.text.slice(0, 80),
-        sentAt: new Date(),
-      });
-
-      await shortContextStore.appendGroupMessage(event.groupId, {
-        messageId: `${event.messageId}:bot`,
-        userId: 'bot',
-        nickname: config.botName,
-        content: reply.text,
-        timestamp: Math.trunc(Date.now() / 1000),
-        mentionedBot: false,
-      });
-      await shortContextStore.appendUserMessage(event.groupId, event.userId, {
-        messageId: `${event.messageId}:bot`,
-        userId: 'bot',
-        nickname: config.botName,
-        content: reply.text,
-        timestamp: Math.trunc(Date.now() / 1000),
-        mentionedBot: false,
-      });
-
-      await userMemoryStore.update({
-        id: `${result.userRecordId}:memory`,
-        userId: result.userRecordId,
-        nicknameHistory: mergeUniqueStrings(userMemory.nicknameHistory, [event.nickname]),
-        lastInteractionAt: new Date(),
-      });
-
-      logMemoryWrite(app.logger, {
-        ...trace,
-        messageId: event.messageId,
-        groupId: event.groupId,
-        userId: event.userId,
-        memoryScope: 'short_term',
-        summary: `Generated and sent reply for ${result.persistedMessageId}.`,
-      });
-    } catch (error) {
-      await updateReplyAuditLogStatus({
-        db,
-        replyLogId,
-        status: 'failed',
-        attemptCount: 1,
-        contentPreview: event.content.slice(0, 80),
-      });
-
-      throw error;
-    }
+    await processMessage(event, trace);
   };
+  app.adminHandlers = {
+    getHealth: () => ({
+      service: 'bot-server',
+      config: {
+        provider: config.defaultProvider,
+        botName: config.botName,
+        activeReplyEnabled: config.activeReplyEnabled,
+      },
+      dependencies: dependencyStatus,
+    }),
+    listKeywordRules: () => keywordRuleStore.listActiveRules(),
+    createKeywordRule: async (body) => {
+      const payload = isRecord(body) ? body : {};
+      const rule = {
+        id: asString(payload.id) ?? `rule:${Date.now()}`,
+        keyword: asString(payload.keyword) ?? '',
+        matchType: normalizeMatchType(payload.matchType),
+        priority: asNumber(payload.priority) ?? 100,
+        enabled: payload.enabled !== false,
+        responseMode: 'must_reply',
+      };
+
+      await saveKeywordRule({
+        rule,
+        store: keywordRuleStore,
+        cache: stateStore,
+      });
+
+      return rule;
+    },
+    getUserMemory: async (userId) => {
+      const profile = await userMemoryStore.getByUserId(userId);
+      const facts = await memoryFactStore.listFactsByUser(userId, 10);
+      const summary = await conversationSummaryStore.getSummary({
+        scope: 'user',
+        userId,
+      });
+
+      return {
+        profile,
+        facts,
+        summary,
+      };
+    },
+    listReplyLogs: () => listRecentReplyAuditLogs({ db, limit: 20 }),
+  };
+  const server = createServer(app);
 
   app.logger.info(
     {
@@ -254,12 +165,16 @@ try {
 
 function createHeuristicTransport() {
   return async (request: LlmRequest): Promise<LlmResponse> => {
-    const messageText = extractPromptField(request.prompt, '当前消息：');
+    const messageText =
+      request.taskType === 'summary'
+        ? extractPromptField(request.prompt, '最近对话：')
+        : extractPromptField(request.prompt, '当前消息：');
 
     return {
       provider: request.provider,
       model: request.model,
-      outputText: buildHeuristicReply(messageText),
+      outputText:
+        request.taskType === 'summary' ? buildHeuristicSummary(messageText) : buildHeuristicReply(messageText),
       finishReason: 'stop',
     };
   };
@@ -289,6 +204,29 @@ function buildHeuristicReply(messageText: string): string {
   return '这个话题我能接上。';
 }
 
-function mergeUniqueStrings(current: string[], incoming: string[]): string[] {
-  return [...new Set([...current, ...incoming.map((item) => item.trim()).filter((item) => item.length > 0)])];
+function buildHeuristicSummary(messageText: string): string {
+  const normalized = messageText
+    .split('\n')
+    .map((item) => item.trim())
+    .filter((item) => item.length > 0)
+    .slice(-3)
+    .join(' / ');
+
+  return normalized.length > 0 ? `最近在聊：${normalized}`.slice(0, 60) : '最近互动比较轻松。';
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function asString(value: unknown): string | undefined {
+  return typeof value === 'string' && value.trim().length > 0 ? value.trim() : undefined;
+}
+
+function asNumber(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
+}
+
+function normalizeMatchType(value: unknown): 'exact' | 'fuzzy' | 'regex' {
+  return value === 'fuzzy' || value === 'regex' ? value : 'exact';
 }
