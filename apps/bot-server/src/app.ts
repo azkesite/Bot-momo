@@ -1,6 +1,7 @@
 import Fastify, { type FastifyInstance } from 'fastify';
 import type { AppConfig } from '@bot-momo/config';
 import { createLogger, type TraceContext } from '@bot-momo/core';
+import { handleNapCatWebhook, type NapCatEventHandler } from './napcat-adapter.js';
 
 export type AppStatus = {
   service: 'bot-server';
@@ -30,6 +31,7 @@ export type DependencyStatus = {
 export type AppContext = {
   config: AppConfig;
   logger: ReturnType<typeof createLogger>;
+  onNapCatEvent?: NapCatEventHandler;
 };
 
 export function createAppContext(config: AppConfig): AppContext {
@@ -117,6 +119,35 @@ export function createServer(app: AppContext): FastifyInstance {
       },
       dependencies: getDependencyStatus(app.config),
     };
+  });
+
+  server.post('/adapters/napcat/events', async (request, reply) => {
+    const result = await handleNapCatWebhook({
+      payload: request.body,
+      logger: app.logger,
+      ...(app.onNapCatEvent ? { onEvent: app.onNapCatEvent } : {}),
+    });
+
+    if (!result.accepted) {
+      return reply.status(202).send({
+        ok: true,
+        accepted: false,
+        traceId: result.traceId,
+        reason: result.reason,
+      });
+    }
+
+    return reply.status(202).send({
+      ok: true,
+      accepted: true,
+      traceId: result.traceId,
+      event: {
+        platform: result.event.platform,
+        messageId: result.event.messageId,
+        groupId: result.event.groupId,
+        userId: result.event.userId,
+      },
+    });
   });
 
   return server;

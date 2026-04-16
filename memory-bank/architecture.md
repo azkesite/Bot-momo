@@ -910,3 +910,111 @@ Redis：
 ### 23.7 下一步建议
 
 下一步进入 implementation plan 第 8 步：实现 NapCat 平台适配器骨架。
+
+## 24. NapCat 适配器骨架实现现状
+
+### 24.1 已实现能力
+
+当前已完成 implementation plan 第 8 步：实现 NapCat 平台适配器骨架。
+
+已实现内容：
+
+- 在 `apps/bot-server` 中新增 NapCat 适配器模块
+- 新增 NapCat group message 到统一消息事件的转换逻辑
+- 新增 NapCat webhook 处理入口
+- 新增统一事件回调注入点
+- 新增 NapCat group message 发送抽象
+- 新增统一发送结果转换
+- 将 NapCat HTTP 入口接入 Fastify 服务
+
+### 24.2 当前接收入口
+
+当前已提供最小接收入口：
+
+- `POST /adapters/napcat/events`
+
+当前入口职责固定为：
+
+- 接收 NapCat payload
+- 转换为统一事件
+- 调用内部事件处理回调
+- 返回统一的 accepted / ignored 结果
+
+说明：
+
+- 当前入口只做协议转换与边界校验
+- 当前不在适配器层内写业务规则、回复决策或记忆逻辑
+
+### 24.3 当前支持的入站消息范围
+
+当前第一版仅支持：
+
+- `post_type=message`
+- `message_type=group`
+
+当前第一版会忽略：
+
+- 非 `message` 事件
+- 非群消息事件
+- 无法转换成统一事件的异常 payload
+
+当前忽略结果会输出：
+
+- `napcat.event.ignored` 日志
+- 结构化 `reason`
+- 可定位的 `details`
+
+### 24.4 当前转换规则
+
+当前已明确：
+
+- `message_id` -> `messageId`
+- `group_id` -> `groupId`
+- `user_id` -> `userId`
+- `sender.card` 优先于 `sender.nickname`
+- `raw_message` 优先作为统一事件 `content`
+- `message` 数组中的 `at` segment 转为统一 `mentions`
+- `message` 数组中的 `reply` segment 转为统一 `replyTo`
+- 原始 NapCat payload 保留在 `rawPayload`
+
+### 24.5 当前发送抽象
+
+当前已实现最小发送接口：
+
+- 目标接口：NapCat `send_group_msg`
+- 支持普通群消息发送
+- 支持附带 reply segment 的引用回复
+- 返回统一发送结果结构
+
+说明：
+
+- 发送层当前只完成协议封装与结果标准化
+- 真正的发送调度、分句、重试和发送日志将在后续步骤接入
+
+### 24.6 当前验证结果
+
+本轮已完成以下验证：
+
+- NapCat group message 可正确转换为统一事件
+- `at` 与 `reply` 关系可正确映射
+- 非支持 payload 会被忽略而不是错误进入业务链路
+- Fastify NapCat webhook 入口可正确返回 accepted 结果
+- Fastify NapCat webhook 入口可正确返回 ignored 结果
+- NapCat sender 可生成标准发送请求并返回统一发送结果
+
+并已通过：
+
+- `corepack pnpm typecheck`
+- `corepack pnpm test`
+- `corepack pnpm lint`
+
+### 24.7 当前已知限制
+
+- 当前只覆盖 NapCat 群消息，不覆盖私聊、撤回、编辑、notice 或 meta_event 业务处理
+- 当前 webhook 未增加额外入站鉴权，后续可根据 NapCat 实际部署方式补充
+- 当前 sender 只覆盖 group send path，未覆盖图片、文件、合并转发等消息类型
+- 当前事件处理回调仍是空业务入口，后续会接入消息入库和审计链路
+
+### 24.8 下一步建议
+
+下一步进入 implementation plan 第 9 步：实现消息入库与基础审计。

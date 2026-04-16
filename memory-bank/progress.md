@@ -191,3 +191,30 @@
 ### 下一步
 
 - 进入 implementation plan 第 8 步：实现 NapCat 平台适配器骨架
+
+## 2026-04-16
+
+### 已完成
+
+- 完成 implementation plan 第 8 步：实现 NapCat 平台适配器骨架
+- 新增 `apps/bot-server/src/napcat-adapter.ts`
+- 实现 NapCat group message 到统一消息事件的转换
+- 实现 `POST /adapters/napcat/events` 接收入口
+- 实现 NapCat group message 发送抽象与统一发送结果转换
+- 新增适配层测试 `tests/napcat-adapter.test.ts`
+
+### 验证结果
+
+- `corepack pnpm typecheck` 通过
+- `corepack pnpm test` 通过
+- `corepack pnpm lint` 通过
+
+### 备注
+
+- 当前适配器层只负责协议转换，不包含回复决策、记忆写入或发送调度
+- 当前只支持 NapCat 的群消息主链路，其他事件类型后续再扩展
+- 统一事件回调入口已经预留好，下一步可以直接接消息入库和审计
+
+### 下一步
+
+- 进入 implementation plan 第 9 步：实现消息入库与基础审计
