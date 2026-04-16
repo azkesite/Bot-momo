@@ -1463,3 +1463,176 @@ Redis：
 ### 31.6 下一步建议
 
 下一步进入 implementation plan 第 16 步：实现用户记忆基础模型。
+
+## 32. 用户记忆基础模型实现现状
+
+### 32.1 已实现能力
+
+当前已完成 implementation plan 第 16 步：实现用户记忆基础模型。
+
+已实现内容：
+
+- 在 `packages/memory` 中新增用户记忆模型模块
+- 支持新用户记忆初始化
+- 支持用户记忆读取或创建
+- 支持用户记忆定向更新
+- 支持更新时间维护
+
+### 32.2 当前记忆字段
+
+当前已覆盖：
+
+- `nicknameHistory`
+- `aliases`
+- `traits`
+- `preferences`
+- `relationshipSummary`
+- `lastInteractionAt`
+
+### 32.3 当前验证结果
+
+本轮已完成以下验证：
+
+- 新用户可创建最小记忆档案
+- 同一用户重复读取不会重复初始化
+- 对一个用户的更新不会污染其他用户
+
+并已通过：
+
+- `corepack pnpm typecheck`
+- `corepack pnpm test`
+- `corepack pnpm lint`
+
+### 32.4 下一步建议
+
+下一步进入 implementation plan 第 17 步：实现短期上下文存储。
+
+## 33. 短期上下文存储实现现状
+
+### 33.1 已实现能力
+
+当前已完成 implementation plan 第 17 步：实现短期上下文存储。
+
+已实现内容：
+
+- 在 `packages/memory` 中新增短期上下文窗口模块
+- 支持群级上下文窗口
+- 支持群内用户级上下文窗口
+- 支持窗口裁剪
+- 支持统一事件转短期上下文消息
+
+### 33.2 当前上下文 key 规则
+
+当前已固定：
+
+- 群上下文 key：`bot-momo:context:group:{groupId}`
+- 群内用户上下文 key：`bot-momo:context:group-user:{groupId}:{userId}`
+
+### 33.3 当前验证结果
+
+本轮已完成以下验证：
+
+- 群上下文窗口超限后会裁剪旧消息
+- 群内用户上下文按群和用户维度隔离
+- mention 标记可正确写入短期上下文消息
+
+并已通过：
+
+- `corepack pnpm typecheck`
+- `corepack pnpm test`
+- `corepack pnpm lint`
+
+### 33.4 下一步建议
+
+下一步进入 implementation plan 第 18 步：实现记忆写入筛选规则。
+
+## 34. 记忆写入筛选规则实现现状
+
+### 34.1 已实现能力
+
+当前已完成 implementation plan 第 18 步：实现记忆写入筛选规则。
+
+已实现内容：
+
+- 在 `packages/memory` 中新增记忆候选分类器
+- 支持小聊废话过滤
+- 支持敏感信息丢弃
+- 支持偏好型信息识别
+- 支持计划型信息识别
+- 支持普通消息仅落短期上下文
+
+### 34.2 当前筛选结果
+
+当前支持输出：
+
+- `discard`
+- `short_term`
+- `mid_term`
+- `long_term`
+
+并附带：
+
+- `reason`
+- `confidence`
+
+### 34.3 当前验证结果
+
+本轮已完成以下验证：
+
+- 偏好表达会进入长期候选
+- 计划表达会进入中期候选
+- 手机号等敏感信息会被丢弃
+- 小聊废话会被丢弃
+- 普通消息会保留在短期层
+
+并已通过：
+
+- `corepack pnpm typecheck`
+- `corepack pnpm test`
+- `corepack pnpm lint`
+
+### 34.4 下一步建议
+
+下一步进入 implementation plan 第 19 步：实现 LLM 提供层骨架。
+
+## 35. LLM 提供层骨架实现现状
+
+### 35.1 已实现能力
+
+当前已完成 implementation plan 第 19 步：实现 LLM 提供层骨架。
+
+已实现内容：
+
+- 在 `packages/llm` 中新增统一 provider 抽象
+- 支持多 provider 标识
+- 支持任务类型区分
+- 支持统一超时控制
+- 支持统一错误包装
+- 支持空输出校验
+
+### 35.2 当前统一错误类型
+
+当前已统一为：
+
+- `timeout`
+- `upstream_failure`
+- `invalid_output`
+
+### 35.3 当前验证结果
+
+本轮已完成以下验证：
+
+- 正常响应可通过统一 provider 返回
+- 超时会包装为统一 timeout 错误
+- 上游失败会包装为统一 upstream_failure 错误
+- 空输出会包装为统一 invalid_output 错误
+
+并已通过：
+
+- `corepack pnpm typecheck`
+- `corepack pnpm test`
+- `corepack pnpm lint`
+
+### 35.4 下一步建议
+
+下一步进入 implementation plan 第 20 步：实现回复生成最小链路。

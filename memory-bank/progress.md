@@ -387,3 +387,27 @@
 ### 下一步
 
 - 进入 implementation plan 第 16 步：实现用户记忆基础模型
+
+## 2026-04-16
+
+### 已完成
+
+- 完成 implementation plan 第 16 步：实现用户记忆基础模型
+- 完成 implementation plan 第 17 步：实现短期上下文存储
+- 完成 implementation plan 第 18 步：实现记忆写入筛选规则
+- 完成 implementation plan 第 19 步：实现 LLM 提供层骨架
+
+### 验证结果
+
+- `corepack pnpm typecheck` 通过
+- `corepack pnpm test` 通过
+- `corepack pnpm lint` 通过
+
+### 备注
+
+- 用户记忆、短期上下文和记忆筛选这三层现在已经都具备了独立可测的基础能力
+- LLM 层已经有统一超时和错误包装，后面接真实生成链路时只需要补 transport 和 prompt 组装
+
+### 下一步
+
+- 进入 implementation plan 第 20 步：实现回复生成最小链路
