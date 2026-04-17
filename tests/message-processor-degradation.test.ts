@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { createLogger, createTraceContext, type RedisStateStore, type UnifiedMessageEvent } from '@bot-momo/core';
 import { createMessageProcessor } from '../apps/bot-server/src/message-processor.js';
 import type { ConversationSummaryStore, MessageAuditPersistence, ShortContextStore, UserMemoryStore } from '@bot-momo/memory';
+import { dispatchReplyTask, type SendReplyTask } from '@bot-momo/sender';
 
 describe('message processor degradation', () => {
   it('falls back to a short reply when llm generation fails', async () => {
@@ -190,6 +191,26 @@ function createMinimalHarness(input: { providerThrows?: boolean; sendThrows?: bo
           platform: 'qq',
           groupId: payload.groupId,
         },
+      };
+    },
+    scheduleReplyTask: async (task: SendReplyTask) => {
+      const result = await dispatchReplyTask({
+        task,
+        store: stateStore,
+        send: async (payload) => {
+          if (input.sendThrows) {
+            throw new Error('send failed');
+          }
+
+          sentMessages.push({
+            content: payload.content,
+          });
+        },
+      });
+
+      return {
+        mode: 'sent' as const,
+        sentCount: result.sentCount,
       };
     },
   });

@@ -504,3 +504,33 @@
 ### 下一步
 
 - 进入 BullMQ 队列化发送调度
+
+## 2026-04-17
+
+### 已完成
+
+- 完成 BullMQ 队列化发送调度
+- 新增 `apps/bot-server/src/jobs/send-reply-queue.ts`
+- `message-processor` 已从直接发送切换为调度发送任务
+- `main.ts` 已启动 BullMQ queue 和 worker
+- 保留 `dispatchReplyTask` 作为 worker 内发送执行层
+- 新增测试：
+  - `tests/send-reply-queue.test.ts`
+  - `message-processor` 相关测试已适配调度接口
+
+### 验证结果
+
+- `corepack pnpm install` 通过
+- `corepack pnpm typecheck` 通过
+- `corepack pnpm test` 通过
+- `corepack pnpm lint` 通过
+
+### 备注
+
+- 当前 BullMQ 已经真正接入，但 worker 仍与主服务同进程运行
+- 这一步先优先把发送线程从主请求链路中摘出来，后续再拆独立 worker 进程
+- 默认发送重试策略已经落地为 3 次指数退避
+
+### 下一步
+
+- 进入真实 NapCat + QQ 群灰度联调

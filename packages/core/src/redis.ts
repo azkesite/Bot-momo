@@ -33,6 +33,15 @@ export type RedisStateStore = {
   deleteKey: (key: string) => Promise<void>;
 };
 
+export type RedisConnectionOptions = {
+  host: string;
+  port: number;
+  username?: string;
+  password?: string;
+  db?: number;
+  tls?: Record<string, never>;
+};
+
 type RedisClientLike = Pick<RedisClientType, 'get' | 'set' | 'del'>;
 
 export function createRedisClient(redisUrl: string): RedisClientType {
@@ -145,5 +154,20 @@ export function createRedisStateStore(client: RedisClientLike): RedisStateStore 
     async deleteKey(key: string) {
       await client.del(key);
     },
+  };
+}
+
+export function createRedisConnectionOptions(redisUrl: string): RedisConnectionOptions {
+  const parsed = new URL(redisUrl);
+  const port = parsed.port.trim().length > 0 ? Number.parseInt(parsed.port, 10) : 6379;
+  const dbPath = parsed.pathname.replace(/^\//u, '').trim();
+
+  return {
+    host: parsed.hostname,
+    port: Number.isFinite(port) ? port : 6379,
+    ...(parsed.username.trim().length > 0 ? { username: decodeURIComponent(parsed.username) } : {}),
+    ...(parsed.password.trim().length > 0 ? { password: decodeURIComponent(parsed.password) } : {}),
+    ...(dbPath.length > 0 ? { db: Number.parseInt(dbPath, 10) } : {}),
+    ...(parsed.protocol === 'rediss:' ? { tls: {} } : {}),
   };
 }

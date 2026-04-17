@@ -26,9 +26,9 @@ import {
 import {
   buildPlaceholderReply,
   createSendSchedule,
-  dispatchReplyTask,
   shouldSendPlaceholder,
   splitReplyText,
+  type SendReplyTask,
 } from '@bot-momo/sender';
 import type { Logger } from 'pino';
 
@@ -76,13 +76,22 @@ export type MessageProcessorDependencies = {
     sentenceIndex?: number;
     sentenceCount?: number;
   }) => Promise<UnifiedSendResult>;
+  scheduleReplyTask: (task: SendReplyTask) => Promise<
+    | {
+        mode: 'queued';
+      }
+    | {
+        mode: 'sent';
+        sentCount: number;
+      }
+  >;
   now?: () => Date;
   replyModel?: string;
   summaryModel?: string;
 };
 
 export type MessageProcessingResult = {
-  status: 'skipped' | 'sent';
+  status: 'skipped' | 'queued' | 'sent';
   reason: string;
   replyText?: string;
   sentCount?: number;
@@ -212,28 +221,25 @@ export function createMessageProcessor(deps: MessageProcessorDependencies) {
         ...(schedule[1]?.delayMs !== undefined ? { delayMs: schedule[1].delayMs } : {}),
       });
 
-      const dispatchResult = await dispatchReplyTask({
-        task: {
-          messageId: event.messageId,
-          taskId: replyLogId,
-          groupId: event.groupId,
-          replyToMessageId: event.messageId,
-          traceId: trace.traceId,
-          sentences: schedule,
-        },
-        store: deps.stateStore,
-        send: async (input) => {
-          await deps.sendGroupMessage(input);
-        },
-      });
+      const scheduledTask: SendReplyTask = {
+        messageId: event.messageId,
+        taskId: replyLogId,
+        groupId: event.groupId,
+        replyToMessageId: event.messageId,
+        traceId: trace.traceId,
+        sentences: schedule,
+      };
+      const scheduleResult = await deps.scheduleReplyTask(scheduledTask);
 
-      await deps.replyAuditStore.updateStatus({
-        replyLogId,
-        status: 'sent',
-        attemptCount: schedule.length,
-        contentPreview: reply.text.slice(0, 80),
-        sentAt: now(),
-      });
+      if (scheduleResult.mode === 'sent') {
+        await deps.replyAuditStore.updateStatus({
+          replyLogId,
+          status: 'sent',
+          attemptCount: scheduleResult.sentCount,
+          contentPreview: reply.text.slice(0, 80),
+          sentAt: now(),
+        });
+      }
 
       const botMessage = {
         messageId: `${event.messageId}:bot`,
@@ -351,10 +357,10 @@ export function createMessageProcessor(deps: MessageProcessorDependencies) {
       });
 
       return {
-        status: 'sent',
+        status: scheduleResult.mode,
         reason: decision.reason,
         replyText: reply.text,
-        sentCount: dispatchResult.sentCount,
+        ...(scheduleResult.mode === 'sent' ? { sentCount: scheduleResult.sentCount } : {}),
       };
     } catch (error) {
       await deps.replyAuditStore.updateStatus({

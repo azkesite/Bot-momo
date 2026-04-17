@@ -32,6 +32,11 @@ import {
   createStartupTraceContext,
   getDependencyStatus,
 } from './app.js';
+import {
+  createSendReplyQueue,
+  createSendReplyWorker,
+  enqueueSendReplyTask,
+} from './jobs/send-reply-queue.js';
 import { createMessageProcessor } from './message-processor.js';
 
 try {
@@ -49,6 +54,7 @@ try {
   const conversationSummaryStore = createConversationSummaryStore(db);
   const shortContextStore = createShortContextStore(stateStore);
   const napCatSender = createNapCatSender(config);
+  const sendReplyQueue = createSendReplyQueue(config.redisUrl);
   const llmProvider = createLlmProvider(
     config.llmTransportMode === 'remote'
       ? createConfiguredLlmTransport(config)
@@ -80,6 +86,11 @@ try {
     conversationSummaryStore,
     llmProvider,
     sendGroupMessage: (input) => napCatSender.sendGroupMessage(input),
+    scheduleReplyTask: (task) =>
+      enqueueSendReplyTask({
+        queue: sendReplyQueue,
+        task,
+      }),
     replyModel: selectedProviderConfig.model ?? 'default-chat-model',
     summaryModel: selectedProviderConfig.model ?? 'default-summary-model',
   });
@@ -133,6 +144,19 @@ try {
     listReplyLogs: () => listRecentReplyAuditLogs({ db, limit: 20 }),
   };
   const server = createServer(app);
+  const sendReplyWorker = createSendReplyWorker({
+    redisUrl: config.redisUrl,
+    logger: app.logger,
+    stateStore,
+    replyAuditStore: {
+      updateStatus: (input) =>
+        updateReplyAuditLogStatus({
+          db,
+          ...input,
+        }),
+    },
+    sendGroupMessage: (input) => napCatSender.sendGroupMessage(input),
+  });
 
   app.logger.info(
     {
@@ -153,7 +177,7 @@ try {
   });
 
   server.addHook('onClose', async () => {
-    await Promise.allSettled([redisClient.quit(), dbClient.end()]);
+    await Promise.allSettled([sendReplyWorker.close(), sendReplyQueue.close(), redisClient.quit(), dbClient.end()]);
   });
 } catch (error) {
   const fallbackLogger = createAppContext({

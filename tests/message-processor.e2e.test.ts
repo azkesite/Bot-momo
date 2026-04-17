@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { createLogger, createTraceContext, type RedisStateStore, type UnifiedMessageEvent } from '@bot-momo/core';
 import { createMessageProcessor } from '../apps/bot-server/src/message-processor.js';
+import { dispatchReplyTask, type SendReplyTask } from '@bot-momo/sender';
 import type {
   ConversationSummaryStore,
   KeywordRuleRecord,
@@ -302,6 +303,27 @@ function createHarness(input: {
           groupId: payload.groupId,
           ...(payload.replyToMessageId ? { replyToMessageId: payload.replyToMessageId } : {}),
         },
+      };
+    },
+    scheduleReplyTask: async (task: SendReplyTask) => {
+      const result = await dispatchReplyTask({
+        task,
+        store: stateStore,
+        send: async (payload) => {
+          if (input.sendThrows) {
+            throw new Error('send failed');
+          }
+
+          sentMessages.push({
+            content: payload.content,
+            sentenceIndex: payload.sentenceIndex,
+          });
+        },
+      });
+
+      return {
+        mode: 'sent' as const,
+        sentCount: result.sentCount,
       };
     },
     now: () => new Date('2026-04-16T12:00:00.000Z'),

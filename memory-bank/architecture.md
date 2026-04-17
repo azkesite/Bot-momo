@@ -1879,3 +1879,84 @@ Redis：
 ### 38.7 下一步建议
 
 下一步进入 BullMQ 队列化发送调度。
+
+## 39. BullMQ 队列化发送调度实现现状
+
+### 39.1 已实现能力
+
+当前已完成发送链路从进程内直接调度迁移到 BullMQ：
+
+- 已接入 BullMQ queue
+- 已接入 BullMQ worker
+- 已实现发送任务 producer
+- 已实现发送任务 worker processor
+- 已保留原有分句、去重与顺序发送逻辑
+
+### 39.2 当前发送架构
+
+当前发送主链路已经调整为：
+
+- `message-processor` 负责生成回复、拆句、生成发送计划
+- 主链路将 `SendReplyTask` 投递到 BullMQ
+- worker 从队列中取出任务
+- worker 内部继续复用 `dispatchReplyTask`
+- `dispatchReplyTask` 继续负责逐句顺序发送和发送去重
+
+这意味着：
+
+- 发送逻辑已经从“请求线程内执行”迁移为“队列异步执行”
+- 后续拆成独立 worker 进程时不需要重写业务调度规则
+
+### 39.3 当前重试策略
+
+当前 BullMQ 默认发送任务策略已固定为：
+
+- `attempts=3`
+- `backoff.type=exponential`
+- `backoff.delay=1000ms`
+- `concurrency=1`
+
+说明：
+
+- 当前 worker 并发固定为 1，优先保证顺序与稳定性
+- 后续如果扩展为多 worker，需要额外设计群级顺序保护
+
+### 39.4 当前状态回写
+
+当前回复日志状态流转为：
+
+- 主链路创建 reply log 时写入 `queued`
+- worker 成功发送后更新为 `sent`
+- worker 发送失败后更新为 `failed`
+
+当前 reply log 仍保留：
+
+- `attemptCount`
+- `contentPreview`
+- `sentAt`
+
+### 39.5 当前测试与验证
+
+本轮新增验证覆盖：
+
+- producer 会使用稳定 `jobId`
+- worker 会成功消费任务并回写发送状态
+- 默认重试策略符合预期
+- 主链路测试通过同步调度替身继续保持稳定
+
+并已通过：
+
+- `corepack pnpm install`
+- `corepack pnpm typecheck`
+- `corepack pnpm test`
+- `corepack pnpm lint`
+
+### 39.6 当前已知限制
+
+- 当前 worker 仍与主服务同进程启动，只是执行路径已队列化
+- 还没有增加 queue health / waiting / failed job 的管理接口展示
+- 当前没有按群维度做严格串行隔离，只通过 worker 并发 1 保守保证顺序
+
+### 39.7 下一步建议
+
+下一步进入真实 NapCat + QQ 群灰度联调。
