@@ -5,7 +5,8 @@ import { createAppContext, createServer } from '../apps/bot-server/src/app.js';
 
 describe('admin routes', () => {
   const config = loadConfig({
-    NAPCAT_BASE_URL: 'http://127.0.0.1:3001',
+    PORT: '8787',
+    NAPCAT_BASE_URL: 'http://127.0.0.1:3000',
     NAPCAT_ACCESS_TOKEN: 'napcat-token',
     ADMIN_TOKEN: 'admin-token',
     DATABASE_URL: 'postgresql://postgres:postgres@127.0.0.1:5432/bot_momo',

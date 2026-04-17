@@ -5,8 +5,8 @@ import { createAppContext, createServer } from '../apps/bot-server/src/app.js';
 
 function createTestConfig() {
   return loadConfig({
-    PORT: '3000',
-    NAPCAT_BASE_URL: 'http://127.0.0.1:3001',
+    PORT: '8787',
+    NAPCAT_BASE_URL: 'http://127.0.0.1:3000',
     NAPCAT_ACCESS_TOKEN: 'token',
     ADMIN_TOKEN: 'admin-token',
     DATABASE_URL: 'postgresql://postgres:postgres@127.0.0.1:5432/bot_momo',
@@ -46,8 +46,11 @@ describe('healthcheck endpoints', () => {
       service: 'bot-server',
       config: {
         provider: 'openai',
+        llmTransportMode: 'heuristic',
         botName: 'momo',
         activeReplyEnabled: true,
+        napcatBaseUrl: 'http://127.0.0.1:3000',
+        port: 8787,
       },
       dependencies: {
         database: {

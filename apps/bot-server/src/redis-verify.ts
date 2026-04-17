@@ -7,10 +7,15 @@ import {
   createRedisStateStore,
   registerRedisLogging,
 } from '@bot-momo/core';
+import { loadLocalEnvFile } from './load-local-env.js';
 
 async function main() {
+  loadLocalEnvFile();
+
   const config = loadConfig({
-    NAPCAT_BASE_URL: process.env.NAPCAT_BASE_URL ?? 'http://127.0.0.1:3001',
+    ...process.env,
+    PORT: process.env.PORT ?? '8787',
+    NAPCAT_BASE_URL: process.env.NAPCAT_BASE_URL ?? 'http://127.0.0.1:3000',
     NAPCAT_ACCESS_TOKEN: process.env.NAPCAT_ACCESS_TOKEN ?? 'verification-token',
     ADMIN_TOKEN: process.env.ADMIN_TOKEN ?? 'verification-admin-token',
     DATABASE_URL:

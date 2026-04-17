@@ -8,8 +8,11 @@ export type AppStatus = {
   ready: true;
   config: {
     provider: AppConfig['defaultProvider'];
+    llmTransportMode: AppConfig['llmTransportMode'];
     botName: string;
     activeReplyEnabled: boolean;
+    napcatBaseUrl: string;
+    port: number;
   };
 };
 
@@ -57,8 +60,11 @@ export function createAppStatus(config: AppConfig): AppStatus {
     ready: true,
     config: {
       provider: config.defaultProvider,
+      llmTransportMode: config.llmTransportMode,
       botName: config.botName,
       activeReplyEnabled: config.activeReplyEnabled,
+      napcatBaseUrl: config.napcatBaseUrl,
+      port: config.port,
     },
   };
 }
@@ -135,8 +141,11 @@ export function createServer(app: AppContext): FastifyInstance {
       service: 'bot-server',
       config: {
         provider: app.config.defaultProvider,
+        llmTransportMode: app.config.llmTransportMode,
         botName: app.config.botName,
         activeReplyEnabled: app.config.activeReplyEnabled,
+        napcatBaseUrl: app.config.napcatBaseUrl,
+        port: app.config.port,
       },
       dependencies: getDependencyStatus(app.config),
     };

@@ -1960,3 +1960,53 @@ Redis：
 ### 39.7 下一步建议
 
 下一步进入真实 NapCat + QQ 群灰度联调。
+## 40. 本机 NapCat 灰度联调准备现状
+
+### 40.1 已实现能力
+
+当前已经完成本机 NapCat 灰度联调前的启动与配置准备：
+
+- `apps/bot-server/src/load-local-env.ts` 会在应用最早启动阶段自动加载 `.env.local`
+- 系统环境变量优先级高于 `.env.local`
+- `.env.local` 文件缺失时静默跳过
+- `.env.local` 文件存在但格式非法时快速失败
+- `main.ts` 与 `redis-verify.ts` 都已经接入本地环境文件自动加载
+
+### 40.2 本机联调默认口径
+
+当前本机联调默认约定为：
+
+- bot 服务端口：`8787`
+- NapCat HTTP Server：`127.0.0.1:3000`
+- NapCat 回调地址：`http://127.0.0.1:8787/adapters/napcat/events`
+- NapCat Access Token 由 `NAPCAT_ACCESS_TOKEN` 提供
+- NapCat 消息格式必须使用可保留消息段的非 `String` 形式
+
+### 40.3 Kimi 联调配置
+
+当前 `.env.example` 与 `.env.local` 已对齐到本机灰度口径：
+
+- `DEFAULT_PROVIDER=kimi`
+- `LLM_TRANSPORT_MODE=remote`
+- `KIMI_BASE_URL=https://api.moonshot.cn/v1`
+- `KIMI_MODEL=kimi-latest`
+
+说明：
+
+- `KIMI_API_KEY` 仍需由本机手动填写真实值
+- 当前没有新增 Kimi 专属业务分支，仍复用现有 OpenAI-compatible transport
+
+### 40.4 可见性补充
+
+当前可通过启动日志和健康信息直接看到以下关键配置：
+
+- `defaultProvider`
+- `llmTransportMode`
+- `napcatBaseUrl`
+- `port`
+
+### 40.5 当前限制
+
+- 这一轮只完成了本机灰度准备与配置对齐，尚未执行真实 QQ 群人工联调
+- 当前服务仍未校验 NapCat HTTP Client 自定义 token
+- 管理接口仍属于开发调试用途，不面向公网暴露

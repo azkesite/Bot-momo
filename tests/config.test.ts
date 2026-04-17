@@ -14,7 +14,7 @@ describe('config module', () => {
 
     expect(config).toEqual({
       nodeEnv: 'development',
-      port: 3000,
+      port: 8787,
       logLevel: 'info',
       napcatBaseUrl: 'http://127.0.0.1:3001',
       napcatAccessToken: 'token',

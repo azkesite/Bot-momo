@@ -534,3 +534,35 @@
 ### 下一步
 
 - 进入真实 NapCat + QQ 群灰度联调
+## 2026-04-17
+
+### 已完成
+
+- 完成本机 NapCat 灰度联调准备
+- 新增 `apps/bot-server/src/load-local-env.ts`
+- `main.ts` 与 `redis-verify.ts` 已支持自动加载 `.env.local`
+- 启动日志与健康信息新增 `defaultProvider`、`llmTransportMode`、`napcatBaseUrl`、`port`
+- `.env.example` 与 `.env.local` 已对齐为本机联调口径
+- 默认远端 provider 已切换为 `kimi`
+- 新增测试 `tests/local-env.test.ts`
+- 更新测试：
+  - `tests/healthcheck.test.ts`
+  - `tests/workspace-structure.test.ts`
+  - `tests/admin-routes.test.ts`
+  - `tests/config.test.ts`
+
+### 验证结果
+
+- `corepack pnpm typecheck`
+- `corepack pnpm test`
+- `corepack pnpm lint`
+
+### 备注
+
+- `.env.local` 只作为本机自动加载文件，不会覆盖已有系统环境变量
+- `KIMI_API_KEY` 仍需要本机填入真实值后才能进行真实联调
+- 这一轮只完成灰度前准备，尚未开始真实 QQ 群人工联调
+
+### 下一步
+
+- 连接真实 NapCat 与 QQ 群，执行一轮人工灰度联调

@@ -37,9 +37,11 @@ import {
   createSendReplyWorker,
   enqueueSendReplyTask,
 } from './jobs/send-reply-queue.js';
+import { loadLocalEnvFile } from './load-local-env.js';
 import { createMessageProcessor } from './message-processor.js';
 
 try {
+  const localEnv = loadLocalEnvFile();
   const config = loadConfig();
   const app = createAppContext(config);
   const redisClient = createRedisClient(config.redisUrl);
@@ -102,8 +104,11 @@ try {
       service: 'bot-server',
       config: {
         provider: config.defaultProvider,
+        llmTransportMode: config.llmTransportMode,
         botName: config.botName,
         activeReplyEnabled: config.activeReplyEnabled,
+        napcatBaseUrl: config.napcatBaseUrl,
+        port: config.port,
       },
       dependencies: dependencyStatus,
     }),
@@ -166,6 +171,11 @@ try {
       llmTransportMode: config.llmTransportMode,
       botName: config.botName,
       activeReplyEnabled: config.activeReplyEnabled,
+      napcatBaseUrl: config.napcatBaseUrl,
+      port: config.port,
+      localEnvFileLoaded: localEnv.loaded,
+      localEnvFilePath: localEnv.path,
+      localEnvAppliedKeys: localEnv.appliedKeys,
       dependencyStatus,
     },
     'Application startup complete',
@@ -182,7 +192,8 @@ try {
 } catch (error) {
   const fallbackLogger = createAppContext({
     ...loadConfig({
-      NAPCAT_BASE_URL: 'http://127.0.0.1:3001',
+      PORT: '8787',
+      NAPCAT_BASE_URL: 'http://127.0.0.1:3000',
       NAPCAT_ACCESS_TOKEN: 'bootstrap-token',
       ADMIN_TOKEN: 'bootstrap-admin-token',
       DATABASE_URL: 'postgresql://postgres:postgres@127.0.0.1:5432/bot_momo',

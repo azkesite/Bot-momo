@@ -2,7 +2,7 @@ import { z } from 'zod';
 
 export const CONFIG_PACKAGE_NAME = '@bot-momo/config';
 
-const DEFAULT_PORT = 3000;
+const DEFAULT_PORT = 8787;
 const DEFAULT_LOG_LEVEL = 'info';
 const DEFAULT_PROVIDER = 'openai';
 const DEFAULT_BOT_NAME = 'momo';
