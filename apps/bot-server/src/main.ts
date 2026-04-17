@@ -6,7 +6,12 @@ import {
   logProcessingError,
   registerRedisLogging,
 } from '@bot-momo/core';
-import { createLlmProvider, type LlmRequest, type LlmResponse } from '@bot-momo/llm';
+import {
+  createConfiguredLlmTransport,
+  createLlmProvider,
+  type LlmRequest,
+  type LlmResponse,
+} from '@bot-momo/llm';
 import {
   createConversationSummaryStore,
   createKeywordRuleStore,
@@ -44,8 +49,13 @@ try {
   const conversationSummaryStore = createConversationSummaryStore(db);
   const shortContextStore = createShortContextStore(stateStore);
   const napCatSender = createNapCatSender(config);
-  const llmProvider = createLlmProvider(createHeuristicTransport());
+  const llmProvider = createLlmProvider(
+    config.llmTransportMode === 'remote'
+      ? createConfiguredLlmTransport(config)
+      : createHeuristicTransport(),
+  );
   const dependencyStatus = getDependencyStatus(config);
+  const selectedProviderConfig = config.llmProviders[config.defaultProvider];
   const processMessage = createMessageProcessor({
     config,
     logger: app.logger,
@@ -70,6 +80,8 @@ try {
     conversationSummaryStore,
     llmProvider,
     sendGroupMessage: (input) => napCatSender.sendGroupMessage(input),
+    replyModel: selectedProviderConfig.model ?? 'default-chat-model',
+    summaryModel: selectedProviderConfig.model ?? 'default-summary-model',
   });
   app.onNapCatEvent = async (event, trace) => {
     await processMessage(event, trace);
@@ -127,6 +139,7 @@ try {
       event: 'app.startup',
       traceId: createStartupTraceContext().traceId,
       provider: config.defaultProvider,
+      llmTransportMode: config.llmTransportMode,
       botName: config.botName,
       activeReplyEnabled: config.activeReplyEnabled,
       dependencyStatus,

@@ -475,3 +475,32 @@
 ### 下一步
 
 - 进入真实环境灰度联调，优先替换真实 LLM transport 并补任务队列
+
+## 2026-04-17
+
+### 已完成
+
+- 完成真实多 provider transport 第一版
+- 新增 `packages/llm/src/transport.ts`
+- 配置层新增 `LLM_TRANSPORT_MODE` 与各 provider 的 `apiKey / baseUrl / model`
+- `main.ts` 已支持按配置在 heuristic 与 remote 之间切换
+- 更新 `.env.example`
+- 新增测试：
+  - `tests/llm-transport.test.ts`
+  - `tests/config.test.ts` 中的 remote 模式校验
+
+### 验证结果
+
+- `corepack pnpm typecheck` 通过
+- `corepack pnpm test` 通过
+- `corepack pnpm lint` 通过
+
+### 备注
+
+- OpenAI、GLM、DeepSeek、Kimi 当前统一走 OpenAI-compatible transport
+- Claude 当前走 Anthropic messages transport
+- 真实 provider 已可接入，但还没有在真实外网环境逐个联调
+
+### 下一步
+
+- 进入 BullMQ 队列化发送调度

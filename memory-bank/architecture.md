@@ -1805,3 +1805,77 @@ Redis：
 - 接真实 provider HTTP transport
 - 接 BullMQ 任务队列与重试
 - 在真实 QQ 群做一轮人工灰度联调
+
+## 38. 真实多 Provider Transport 实现现状
+
+### 38.1 已实现能力
+
+当前已完成真实 LLM transport 的第一版接入能力：
+
+- 配置层已支持 `heuristic / remote` 两种 transport 模式
+- 已支持按 provider 读取独立的 `apiKey / baseUrl / model`
+- 已实现 OpenAI-compatible transport
+- 已实现 Anthropic messages transport
+- 主程序已可按配置切换真实 transport
+
+### 38.2 当前 provider 接入策略
+
+当前 provider 路由口径如下：
+
+- `openai` -> OpenAI-compatible
+- `glm` -> OpenAI-compatible
+- `deepseek` -> OpenAI-compatible
+- `kimi` -> OpenAI-compatible
+- `claude-code` -> Anthropic messages API
+
+说明：
+
+- 这意味着绝大多数 provider 都可以通过统一 chat completions 风格接入
+- Claude 单独走 Anthropic 风格接口
+
+### 38.3 当前配置规则
+
+当前新增关键配置：
+
+- `LLM_TRANSPORT_MODE=heuristic|remote`
+- `OPENAI_*`
+- `CLAUDE_*`
+- `GLM_*`
+- `DEEPSEEK_*`
+- `KIMI_*`
+
+当前校验规则：
+
+- `heuristic` 模式下不强制要求远端 key 和 model
+- `remote` 模式下会强校验当前默认 provider 的 `apiKey` 和 `model`
+
+### 38.4 当前主链路变化
+
+当前 `main.ts` 已不再固定使用启发式 transport：
+
+- 当 `LLM_TRANSPORT_MODE=heuristic` 时，继续走本地启发式实现
+- 当 `LLM_TRANSPORT_MODE=remote` 时，走真实 HTTP transport
+
+当前回复生成和摘要生成都复用同一个 provider transport。
+
+### 38.5 当前验证结果
+
+本轮已完成以下验证：
+
+- OpenAI-compatible 请求头、URL 和响应解析正确
+- Anthropic 请求头、URL 和响应解析正确
+- 配置层会在 remote 模式下拦截缺失的 provider 凭据
+- 应用主链路仍保持通过：
+  - `corepack pnpm typecheck`
+  - `corepack pnpm test`
+  - `corepack pnpm lint`
+
+### 38.6 当前已知限制
+
+- 目前尚未为不同 provider 做更细的 task-level 参数差异化
+- 目前所有真实 provider 都默认使用单一 model，不区分 reply / summary
+- 还没有在真实网络环境对五个 provider 分别做联调验真
+
+### 38.7 下一步建议
+
+下一步进入 BullMQ 队列化发送调度。

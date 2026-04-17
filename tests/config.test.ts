@@ -20,6 +20,7 @@ describe('config module', () => {
       napcatAccessToken: 'token',
       adminToken: 'admin-token',
       defaultProvider: 'openai',
+      llmTransportMode: 'heuristic',
       botName: 'momo',
       botAliases: [],
       activeReplyEnabled: true,
@@ -28,6 +29,34 @@ describe('config module', () => {
       keywordTriggerEnabled: true,
       databaseUrl: 'postgresql://postgres:postgres@127.0.0.1:5432/bot_momo',
       redisUrl: 'redis://127.0.0.1:6379',
+      llmProviders: {
+        openai: {
+          apiKey: undefined,
+          baseUrl: 'https://api.openai.com/v1',
+          model: undefined,
+        },
+        'claude-code': {
+          apiKey: undefined,
+          baseUrl: 'https://api.anthropic.com',
+          model: undefined,
+          apiVersion: '2023-06-01',
+        },
+        glm: {
+          apiKey: undefined,
+          baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
+          model: undefined,
+        },
+        deepseek: {
+          apiKey: undefined,
+          baseUrl: 'https://api.deepseek.com/v1',
+          model: undefined,
+        },
+        kimi: {
+          apiKey: undefined,
+          baseUrl: 'https://api.moonshot.cn/v1',
+          model: undefined,
+        },
+      },
     });
   });
 
@@ -40,6 +69,7 @@ describe('config module', () => {
       NAPCAT_ACCESS_TOKEN: 'token',
       ADMIN_TOKEN: 'admin-token',
       DEFAULT_PROVIDER: 'kimi',
+      LLM_TRANSPORT_MODE: 'remote',
       BOT_NAME: 'momo-chan',
       BOT_ALIASES: 'momo, bot, 默默 ',
       ACTIVE_REPLY_ENABLED: 'false',
@@ -48,6 +78,8 @@ describe('config module', () => {
       KEYWORD_TRIGGER_ENABLED: 'false',
       DATABASE_URL: 'postgresql://postgres:postgres@127.0.0.1:5432/bot_momo',
       REDIS_URL: 'redis://127.0.0.1:6379',
+      KIMI_API_KEY: 'kimi-key',
+      KIMI_MODEL: 'kimi-latest',
     });
 
     expect(config).toEqual({
@@ -58,6 +90,7 @@ describe('config module', () => {
       napcatAccessToken: 'token',
       adminToken: 'admin-token',
       defaultProvider: 'kimi',
+      llmTransportMode: 'remote',
       botName: 'momo-chan',
       botAliases: ['momo', 'bot', '默默'],
       activeReplyEnabled: false,
@@ -66,6 +99,34 @@ describe('config module', () => {
       keywordTriggerEnabled: false,
       databaseUrl: 'postgresql://postgres:postgres@127.0.0.1:5432/bot_momo',
       redisUrl: 'redis://127.0.0.1:6379',
+      llmProviders: {
+        openai: {
+          apiKey: undefined,
+          baseUrl: 'https://api.openai.com/v1',
+          model: undefined,
+        },
+        'claude-code': {
+          apiKey: undefined,
+          baseUrl: 'https://api.anthropic.com',
+          model: undefined,
+          apiVersion: '2023-06-01',
+        },
+        glm: {
+          apiKey: undefined,
+          baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
+          model: undefined,
+        },
+        deepseek: {
+          apiKey: undefined,
+          baseUrl: 'https://api.deepseek.com/v1',
+          model: undefined,
+        },
+        kimi: {
+          apiKey: 'kimi-key',
+          baseUrl: 'https://api.moonshot.cn/v1',
+          model: 'kimi-latest',
+        },
+      },
     });
   });
 
@@ -100,6 +161,20 @@ describe('config module', () => {
         NAPCAT_ACCESS_TOKEN: 'token',
         ADMIN_TOKEN: 'admin-token',
         ACTIVE_REPLY_BASE_PROBABILITY: '1.2',
+        DATABASE_URL: 'postgresql://postgres:postgres@127.0.0.1:5432/bot_momo',
+        REDIS_URL: 'redis://127.0.0.1:6379',
+      }),
+    ).toThrowError(ConfigError);
+  });
+
+  it('fails in remote mode when the selected provider credentials are missing', () => {
+    expect(() =>
+      loadConfig({
+        NAPCAT_BASE_URL: 'http://127.0.0.1:3001',
+        NAPCAT_ACCESS_TOKEN: 'token',
+        ADMIN_TOKEN: 'admin-token',
+        LLM_TRANSPORT_MODE: 'remote',
+        DEFAULT_PROVIDER: 'openai',
         DATABASE_URL: 'postgresql://postgres:postgres@127.0.0.1:5432/bot_momo',
         REDIS_URL: 'redis://127.0.0.1:6379',
       }),
